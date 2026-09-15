@@ -1,26 +1,123 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surface Layers */
+  --bg-canvas: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-raised: #f1f5f9;
+  --bg-overlay: rgba(15, 23, 42, 0.04);
+
+  /* Typography Colors */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* Financial Semantics */
+  --money-inflow: #059669;
+  --money-inflow-subtle: #ecfdf5;
+  --money-outflow: #e11d48;
+  --money-outflow-subtle: #fff1f2;
+  --money-warning: #d97706;
+  --money-warning-subtle: #fffbeb;
+  --money-neutral: #64748b;
+
+  /* Brand */
+  --brand-primary: #4f46e5;
+  --brand-hover: #4338ca;
+  --brand-subtle: #eef2ff;
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --border-focus: #4f46e5;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark {
+  /* Surface Layers */
+  --bg-canvas: #090d16;
+  --bg-surface: #111827;
+  --bg-raised: #1f293d;
+  --bg-overlay: rgba(255, 255, 255, 0.04);
+
+  /* Typography Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --text-inverse: #090d16;
+
+  /* Financial Semantics */
+  --money-inflow: #34d399;
+  --money-inflow-subtle: rgba(5, 150, 105, 0.15);
+  --money-outflow: #fb7185;
+  --money-outflow-subtle: rgba(225, 29, 72, 0.15);
+  --money-warning: #fbbf24;
+  --money-warning-subtle: rgba(217, 119, 6, 0.15);
+  --money-neutral: #94a3b8;
+
+  /* Brand */
+  --brand-primary: #818cf8;
+  --brand-hover: #a5b4fc;
+  --brand-subtle: rgba(79, 70, 229, 0.15);
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-focus: #818cf8;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.6), 0 10px 24px rgba(0, 0, 0, 0.45);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-raised: var(--bg-raised);
+  --color-overlay: var(--bg-overlay);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-inflow: var(--money-inflow);
+  --color-inflow-subtle: var(--money-inflow-subtle);
+  --color-outflow: var(--money-outflow);
+  --color-outflow-subtle: var(--money-outflow-subtle);
+  --color-warning: var(--money-warning);
+  --color-warning-subtle: var(--money-warning-subtle);
+  --color-neutral: var(--money-neutral);
+
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-subtle: var(--brand-subtle);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-focus: var(--border-focus);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Hide scrollbar for clean mobile horizontal carousels and tab bars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
