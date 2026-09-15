@@ -22,7 +22,7 @@ export function MoneyAmount({
   if (privacyMask) {
     return (
       <span
-        className={`font-mono font-medium select-none tracking-wider text-text-secondary ${className}`}
+        className={`font-mono font-medium select-none tracking-wider text-text-muted opacity-60 ${className}`}
       >
         $••••••
       </span>
@@ -59,9 +59,9 @@ export function MoneyAmount({
 
   return (
     <span
-      className={`inline-flex items-baseline font-mono tabular-nums ${sizeClasses[size]} ${colorClass} ${className}`}
+      className={`inline-flex items-baseline font-mono tabular-nums select-none ${sizeClasses[size]} ${colorClass} ${className}`}
     >
-      <span>{sign}</span>
+      <span className="opacity-80">{sign}</span>
       <span>{formatted}</span>
     </span>
   );

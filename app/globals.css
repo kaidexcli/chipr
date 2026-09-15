@@ -1,83 +1,83 @@
 @import "tailwindcss";
 
 :root {
-  /* Surface Layers */
-  --bg-canvas: #f6f8fc;
+  /* Surface Layers - Higher Contrast & Modern Depth */
+  --bg-canvas: #fcfdfe;
   --bg-surface: #ffffff;
-  --bg-raised: #eef2f8;
-  --bg-overlay: rgba(15, 23, 42, 0.04);
-  --bg-scrim: rgba(15, 23, 42, 0.56);
+  --bg-raised: #f8fafc;
+  --bg-overlay: rgba(15, 23, 42, 0.03);
+  --bg-scrim: rgba(15, 23, 42, 0.6);
 
-  /* Typography Colors */
+  /* Typography Colors - Refined for Readability */
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #64748b;
   --text-inverse: #ffffff;
 
-  /* Financial Semantics */
-  --money-inflow: #059669;
+  /* Financial Semantics - High Authority Palette */
+  --money-inflow: #10b981; /* emerald-500 */
   --money-inflow-subtle: #ecfdf5;
-  --money-outflow: #e11d48;
+  --money-outflow: #f43f5e; /* rose-500 */
   --money-outflow-subtle: #fff1f2;
-  --money-warning: #d97706;
+  --money-warning: #f59e0b; /* amber-500 */
   --money-warning-subtle: #fffbeb;
   --money-neutral: #64748b;
 
-  /* Brand */
+  /* Brand - Depth-enhanced Indigo */
   --brand-primary: #4f46e5;
   --brand-hover: #4338ca;
   --brand-subtle: #eef2ff;
-  --workspace-personal: #4f46e5;
-  --workspace-business: #0284c7;
+  --workspace-personal: #6366f1;
+  --workspace-business: #0ea5e9;
 
-  /* Borders & Dividers */
-  --border-subtle: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.16);
-  --border-focus: #4f46e5;
+  /* Borders & Dividers - Softened */
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-strong: rgba(15, 23, 42, 0.12);
+  --border-focus: #6366f1;
 
-  /* Shadows */
-  --elevation-card: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.04);
-  --elevation-floating: 0 4px 8px rgba(15, 23, 42, 0.06), 0 20px 48px rgba(15, 23, 42, 0.12);
+  /* Shadows - Layered for "SaaS" look */
+  --elevation-card: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03);
+  --elevation-floating: 0 10px 15px -3px rgba(0,0,0,0.05), 0 20px 25px -5px rgba(0,0,0,0.05);
 }
 
 .dark {
-  /* Surface Layers */
-  --bg-canvas: #090d16;
+  /* Surface Layers - Deep Slate/Navy */
+  --bg-canvas: #0b0f1a;
   --bg-surface: #111827;
-  --bg-raised: #1f293d;
-  --bg-overlay: rgba(255, 255, 255, 0.04);
-  --bg-scrim: rgba(2, 6, 23, 0.72);
+  --bg-raised: #1f2937;
+  --bg-overlay: rgba(255, 255, 255, 0.03);
+  --bg-scrim: rgba(2, 6, 23, 0.8);
 
   /* Typography Colors */
-  --text-primary: #f8fafc;
+  --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --text-inverse: #090d16;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
 
   /* Financial Semantics */
   --money-inflow: #34d399;
-  --money-inflow-subtle: rgba(5, 150, 105, 0.15);
+  --money-inflow-subtle: rgba(52, 211, 153, 0.12);
   --money-outflow: #fb7185;
-  --money-outflow-subtle: rgba(225, 29, 72, 0.15);
+  --money-outflow-subtle: rgba(251, 113, 133, 0.12);
   --money-warning: #fbbf24;
-  --money-warning-subtle: rgba(217, 119, 6, 0.15);
+  --money-warning-subtle: rgba(251, 191, 36, 0.12);
   --money-neutral: #94a3b8;
 
   /* Brand */
   --brand-primary: #818cf8;
   --brand-hover: #a5b4fc;
-  --brand-subtle: rgba(79, 70, 229, 0.15);
+  --brand-subtle: rgba(129, 140, 248, 0.15);
   --workspace-personal: #818cf8;
   --workspace-business: #38bdf8;
 
   /* Borders & Dividers */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
   --border-focus: #818cf8;
 
   /* Shadows */
-  --elevation-card: 0 1px 2px rgba(0, 0, 0, 0.28), 0 8px 24px rgba(0, 0, 0, 0.22);
-  --elevation-floating: 0 4px 12px rgba(0, 0, 0, 0.34), 0 20px 48px rgba(0, 0, 0, 0.42);
+  --elevation-card: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -1px rgba(0,0,0,0.2);
+  --elevation-floating: 0 20px 25px -5px rgba(0,0,0,0.4), 0 10px 10px -5px rgba(0,0,0,0.3);
 }
 
 @theme inline {

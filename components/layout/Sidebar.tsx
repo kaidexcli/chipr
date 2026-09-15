@@ -180,48 +180,52 @@ function SidebarBody({
       {/* Scrollable upper section */}
       <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pr-0.5">
         {/* Workspace Quick Switcher (Personal vs Business) */}
-        <div className="rounded-xl border border-border-subtle bg-canvas/60 p-2 space-y-1.5">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-              Workspace
+        <div className="rounded-2xl border border-border-subtle bg-surface p-1.5 shadow-xs space-y-1.5">
+          <div className="flex items-center justify-between px-2 py-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted opacity-70">
+              Context
             </span>
             <span
-              className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-tighter transition-colors duration-300 ${
                 workspace === "personal"
-                  ? "bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300"
-                  : "bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300"
+                  ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300"
+                  : "bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300"
               }`}
             >
               {workspace === "personal" ? "Personal" : "Business"}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-1 text-[11px] font-semibold">
+          <div className="grid grid-cols-2 gap-1.5 p-0.5">
             <button
               type="button"
               onClick={() => handleWorkspaceChange("personal")}
-              className={`py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
+              className={`py-2 px-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 truncate group ${
                 workspace === "personal"
-                  ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-text-muted hover:text-text-primary hover:bg-raised"
+                  ? "bg-indigo-600 text-white shadow-md ring-1 ring-indigo-500 font-bold scale-[1.02]"
+                  : "text-text-secondary hover:text-text-primary hover:bg-raised"
               }`}
               title="Personal Household Workspace"
             >
-              <UserIcon className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Personal</span>
+              <UserIcon className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${
+                workspace === "personal" ? "text-white" : "text-text-muted"
+              }`} />
+              <span className="truncate text-xs">Personal</span>
             </button>
             <button
               type="button"
               onClick={() => handleWorkspaceChange("business")}
-              className={`py-1.5 px-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
+              className={`py-2 px-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 truncate group ${
                 workspace === "business"
-                  ? "bg-sky-600 text-white shadow-xs font-bold"
-                  : "text-text-muted hover:text-text-primary hover:bg-raised"
+                  ? "bg-sky-600 text-white shadow-md ring-1 ring-sky-500 font-bold scale-[1.02]"
+                  : "text-text-secondary hover:text-text-primary hover:bg-raised"
               }`}
               title="Business Commercial Workspace"
             >
-              <BuildingOfficeIcon className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{settings.businessName || "Business"}</span>
+              <BuildingOfficeIcon className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${
+                workspace === "business" ? "text-white" : "text-text-muted"
+              }`} />
+              <span className="truncate text-xs">{settings.businessName || "Business"}</span>
             </button>
           </div>
         </div>
@@ -238,7 +242,7 @@ function SidebarBody({
 
         {/* Navigation Tabs */}
         <div className="space-y-1">
-          <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+          <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-text-muted opacity-70">
             Menu
           </div>
           {navItems.map((item) => {
@@ -250,25 +254,27 @@ function SidebarBody({
                 key={item.id}
                 type="button"
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "bg-brand text-white shadow-xs"
-                    : "text-text-secondary hover:bg-raised hover:text-text-primary"
+                    ? "bg-brand text-white shadow-md ring-1 ring-brand-hover scale-[1.01]"
+                    : "text-text-secondary hover:bg-raised hover:text-text-primary active:scale-[0.98]"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <IconComponent className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <IconComponent className={`w-4 h-4 transition-transform duration-200 ${
+                    isActive ? "text-white" : "text-text-muted group-hover:text-text-primary"
+                  }`} />
+                  <span className={isActive ? "text-white" : "text-text-secondary"}>{item.label}</span>
                 </div>
 
                 {item.badge && (
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold ${
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold transition-colors duration-200 ${
                       isActive
                         ? "bg-white/20 text-white"
                         : item.badgeColor === "red"
-                        ? "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300"
-                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                        ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300"
+                        : "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300"
                     }`}
                   >
                     {item.badge}
@@ -282,13 +288,13 @@ function SidebarBody({
         {/* Linked Accounts Section */}
         <div className="space-y-2 pt-1 border-t border-border-subtle">
           <div className="flex items-center justify-between px-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted opacity-70">
               Accounts ({displayedAccounts.length})
             </span>
             <button
               type="button"
               onClick={handleAddAccountClick}
-              className="flex items-center gap-1 text-[10px] font-semibold text-brand hover:underline cursor-pointer"
+              className="flex items-center gap-1 text-[10px] font-semibold text-brand hover:text-brand-hover transition-colors cursor-pointer"
               title="Add financial account"
             >
               <PlusIcon className="w-3 h-3" />
@@ -300,7 +306,7 @@ function SidebarBody({
             <button
               type="button"
               onClick={handleAddAccountClick}
-              className="w-full rounded-xl border border-dashed border-border-subtle p-3 text-center text-xs text-text-muted hover:border-brand hover:text-brand transition-colors cursor-pointer"
+              className="w-full rounded-xl border border-dashed border-border-subtle p-3 text-center text-xs text-text-muted hover:border-brand hover:text-brand transition-all duration-200 cursor-pointer bg-raised/50"
             >
               + Link account
             </button>
@@ -311,17 +317,17 @@ function SidebarBody({
                 return (
                   <div
                     key={acc.id}
-                    className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-text-secondary hover:bg-raised/70 transition-colors"
+                    className="flex items-center justify-between rounded-xl px-2.5 py-2 text-xs text-text-secondary hover:bg-raised transition-all duration-200 group cursor-pointer"
                   >
                     <div className="flex items-center gap-2 min-w-0 pr-1">
-                      <div className="p-1 rounded-md bg-canvas text-text-muted shrink-0">
+                      <div className="p-1.5 rounded-lg bg-surface border border-border-subtle text-text-muted shrink-0 group-hover:text-brand transition-colors">
                         <AccIcon className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-medium text-text-primary truncate">
+                        <p className="text-[11px] font-semibold text-text-primary truncate group-hover:text-brand transition-colors">
                           {acc.name}
                         </p>
-                        <p className="text-[9px] font-mono text-text-muted truncate">
+                        <p className="text-[9px] font-mono text-text-muted truncate opacity-70">
                           {acc.institution} {acc.accountNumberMasked}
                         </p>
                       </div>
