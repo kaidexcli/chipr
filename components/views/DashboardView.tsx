@@ -24,6 +24,7 @@ import {
   CreditCardIcon,
   GridIcon,
   ListIcon,
+  CreditPlusIcon,
 } from "@/components/ui/Icons";
 
 export function DashboardView() {
@@ -38,6 +39,7 @@ export function DashboardView() {
     markReimbursed,
     deleteTransaction,
     setActiveTab,
+    openAddCreditModal,
   } = useFinance();
 
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -143,6 +145,14 @@ export function DashboardView() {
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
+              onClick={() => openAddCreditModal()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition-all cursor-pointer"
+            >
+              <CreditPlusIcon className="w-3.5 h-3.5" />
+              <span>Add Credit / Top-Up</span>
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 setEditingAccount(null);
                 setIsAccountModalOpen(true);
@@ -223,6 +233,16 @@ export function DashboardView() {
 
           <button
             type="button"
+            onClick={() => openAddCreditModal()}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 active:scale-[0.98] transition-all cursor-pointer"
+            title="Add credit or top up funds"
+          >
+            <CreditPlusIcon className="w-3.5 h-3.5" />
+            <span>Add Credit</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               setEditingTx(null);
               setIsTxModalOpen(true);
@@ -254,18 +274,30 @@ export function DashboardView() {
             </p>
           </div>
 
-          {/* Connect Account Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setEditingAccount(null);
-              setIsAccountModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border-subtle bg-surface px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-raised hover:border-border-strong transition-all cursor-pointer shadow-xs self-start sm:self-auto"
-          >
-            <PlusIcon className="w-3.5 h-3.5 text-brand" />
-            <span>Connect Account</span>
-          </button>
+          {/* Action Buttons: Add Credit & Connect Account */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => openAddCreditModal()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Add credit or top up funds"
+            >
+              <CreditPlusIcon className="w-3.5 h-3.5" />
+              <span>Add Credit</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEditingAccount(null);
+                setIsAccountModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border-subtle bg-surface px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-raised hover:border-border-strong transition-all cursor-pointer shadow-xs"
+            >
+              <PlusIcon className="w-3.5 h-3.5 text-brand" />
+              <span>Connect Account</span>
+            </button>
+          </div>
         </div>
 
         {/* Account Filter Pills */}

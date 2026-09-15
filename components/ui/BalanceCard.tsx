@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { FinancialAccount } from "@/types/finance";
+import { useFinance } from "@/context/FinanceContext";
 import { MoneyAmount } from "./MoneyAmount";
 import {
   BankIcon,
@@ -13,6 +14,7 @@ import {
   CopyIcon,
   CheckIcon,
   ArrowUpRightIcon,
+  CreditPlusIcon,
 } from "./Icons";
 
 interface BalanceCardProps {
@@ -32,6 +34,7 @@ export function BalanceCard({
   className = "",
   variant = "default",
 }: BalanceCardProps) {
+  const { openAddCreditModal } = useFinance();
   const [copied, setCopied] = useState(false);
 
   const handleCopyMasked = (e: React.MouseEvent) => {
@@ -116,16 +119,30 @@ export function BalanceCard({
           </div>
         </div>
 
-        <div className="text-right shrink-0 pl-2">
-          <MoneyAmount
-            amount={account.balance}
-            size="sm"
-            colored={isDebt}
-            privacyMask={privacyMask}
-          />
-          <span className="text-[9px] uppercase tracking-wider text-text-muted block font-mono">
-            {isDebt ? "Balance Due" : "Available"}
-          </span>
+        <div className="flex items-center gap-2.5 text-right shrink-0 pl-2">
+          <div>
+            <MoneyAmount
+              amount={account.balance}
+              size="sm"
+              colored={isDebt}
+              privacyMask={privacyMask}
+            />
+            <span className="text-[9px] uppercase tracking-wider text-text-muted block font-mono">
+              {isDebt ? "Balance Due" : "Available"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openAddCreditModal(account);
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+            title={`Add credit to ${account.name}`}
+          >
+            <CreditPlusIcon className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     );
@@ -171,20 +188,35 @@ export function BalanceCard({
           </div>
         </div>
 
-        {/* Quick Edit Button */}
-        {onEdit && (
+        {/* Quick Actions: Credit & Edit */}
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onEdit(account);
+              openAddCreditModal(account);
             }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-raised transition-all cursor-pointer"
-            title="Edit account details"
+            className="flex items-center gap-1 py-1 px-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer text-[10px] font-bold border border-emerald-500/20 shadow-2xs"
+            title={`Add credit to ${account.name}`}
           >
-            <EditIcon className="w-3.5 h-3.5" />
+            <CreditPlusIcon className="w-3 h-3" />
+            <span>Credit</span>
           </button>
-        )}
+
+          {onEdit && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(account);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-raised transition-all cursor-pointer"
+              title="Edit account details"
+            >
+              <EditIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Center: Prominent Balance Display */}

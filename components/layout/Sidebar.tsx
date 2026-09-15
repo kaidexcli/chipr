@@ -30,6 +30,7 @@ import {
   BuildingOfficeIcon,
   LogoMark,
   SparklesIcon,
+  CreditPlusIcon,
 } from "@/components/ui/Icons";
 
 interface NavItem {
@@ -82,6 +83,7 @@ function SidebarBody({
     darkMode,
     toggleDarkMode,
     settings,
+    openAddCreditModal,
   } = useFinance();
 
   const pendingReimbursementsCount = transactions.filter(
@@ -291,15 +293,29 @@ function SidebarBody({
             <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted opacity-70">
               Accounts ({displayedAccounts.length})
             </span>
-            <button
-              type="button"
-              onClick={handleAddAccountClick}
-              className="flex items-center gap-1 text-[10px] font-semibold text-brand hover:text-brand-hover transition-colors cursor-pointer"
-              title="Add financial account"
-            >
-              <PlusIcon className="w-3 h-3" />
-              <span>Add</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  openAddCreditModal();
+                  onActionClose?.();
+                }}
+                className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors cursor-pointer"
+                title="Add credit or top up funds"
+              >
+                <CreditPlusIcon className="w-3 h-3" />
+                <span>Credit</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleAddAccountClick}
+                className="flex items-center gap-1 text-[10px] font-semibold text-brand hover:text-brand-hover transition-colors cursor-pointer"
+                title="Add financial account"
+              >
+                <PlusIcon className="w-3 h-3" />
+                <span>Add</span>
+              </button>
+            </div>
           </div>
 
           {displayedAccounts.length === 0 ? (
@@ -317,6 +333,11 @@ function SidebarBody({
                 return (
                   <div
                     key={acc.id}
+                    onClick={() => {
+                      openAddCreditModal(acc);
+                      onActionClose?.();
+                    }}
+                    title={`Click to Add Credit to ${acc.name}`}
                     className="flex items-center justify-between rounded-xl px-2.5 py-2 text-xs text-text-secondary hover:bg-raised transition-all duration-200 group cursor-pointer"
                   >
                     <div className="flex items-center gap-2 min-w-0 pr-1">

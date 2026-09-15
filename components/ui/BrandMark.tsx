@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef } from "react";
+import { ChiprBirdMascot } from "@/components/ui/ChiprBirdMascot";
 
 export type BrandPartner = "avtica" | "nmblr" | null;
 export type BrandMarkSize = "sm" | "md" | "lg";
@@ -15,6 +16,8 @@ export interface BrandMarkProps
   size?: BrandMarkSize;
   /** Use the glyph-only variant in constrained navigation or controls. */
   variant?: BrandMarkVariant;
+  /** Display the official Chipr bird mascot instead of the geometric glyph. */
+  mascot?: boolean;
 }
 
 const partnerLabels: Record<Exclude<BrandPartner, null>, string> = {
@@ -88,6 +91,7 @@ export function BrandMark({
   partner = null,
   size = "md",
   variant = "full",
+  mascot = false,
   ...props
 }: BrandMarkProps) {
   const isGlyphOnly = variant === "glyph";
@@ -118,12 +122,20 @@ export function BrandMark({
         </span>
       ) : null}
 
-      <span
-        aria-hidden="true"
-        className={`inline-flex shrink-0 items-center justify-center bg-brand p-1.5 text-text-inverse ${classes.glyph}`}
-      >
-        <BrandGlyph className="h-full w-full" />
-      </span>
+      {mascot ? (
+        <ChiprBirdMascot
+          size={size === "lg" ? "md" : "sm"}
+          animated
+          className="shrink-0"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={`inline-flex shrink-0 items-center justify-center bg-brand p-1.5 text-text-inverse ${classes.glyph}`}
+        >
+          <BrandGlyph className="h-full w-full" />
+        </span>
+      )}
 
       {!isGlyphOnly ? (
         <span

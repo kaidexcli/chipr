@@ -23,6 +23,7 @@ import {
   TrashIcon,
   UserIcon,
   SparklesIcon,
+  CreditPlusIcon,
 } from "./Icons";
 
 interface CommandPaletteProps {
@@ -54,6 +55,7 @@ export function CommandPalette({
     transactions,
     invoices,
     accounts,
+    openAddCreditModal,
   } = useFinance();
 
   const [query, setQuery] = useState("");
@@ -151,6 +153,17 @@ export function CommandPalette({
               Quick Actions
             </span>
             <div className="grid grid-cols-2 gap-1 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  openAddCreditModal();
+                  onClose();
+                }}
+                className="flex items-center gap-2 rounded-xl p-2 text-left hover:bg-emerald-500/10 text-text-primary font-medium transition-colors cursor-pointer"
+              >
+                <CreditPlusIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-300">Add Credit / Top-Up</span>
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -333,6 +346,31 @@ export function CommandPalette({
               </button>
             </div>
           </div>
+
+          {/* Quick Credit Match */}
+          {q && ("add credit".includes(q) || "credit".includes(q) || "top up".includes(q) || "top-up".includes(q) || "deposit".includes(q) || "fund".includes(q)) && (
+            <div className="space-y-1 border-t border-border-subtle pt-3">
+              <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                Action Match
+              </span>
+              <div
+                onClick={() => {
+                  openAddCreditModal();
+                  onClose();
+                }}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-xs cursor-pointer border border-emerald-500/20 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <CreditPlusIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <div>
+                    <p className="font-bold text-emerald-700 dark:text-emerald-300">Add Credit / Top-Up Account</p>
+                    <p className="text-[10px] text-text-muted">Simulate or record an inflow of funds into accounts</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">↵ Run</span>
+              </div>
+            </div>
+          )}
 
           {/* Search matches */}
           {(matchedTxs.length > 0 || matchedInvoices.length > 0 || matchedAccounts.length > 0) && (

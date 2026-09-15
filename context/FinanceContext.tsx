@@ -97,6 +97,22 @@ interface FinanceContextType {
   loadDemoData: () => void;
   clearAllData: () => void;
   importTransactionsFromCSV: (csvText: string) => number;
+
+  // Add Credit Action & Modal Control
+  isAddCreditModalOpen: boolean;
+  setIsAddCreditModalOpen: (open: boolean) => void;
+  openAddCreditModal: (targetAccount?: FinancialAccount) => void;
+  closeAddCreditModal: () => void;
+  addCreditTargetAccount: FinancialAccount | null;
+  addCredit: (params: {
+    accountId?: string;
+    amount: number;
+    merchant?: string;
+    category?: string;
+    entity?: WorkspaceEntity;
+    date?: string;
+    note?: string;
+  }) => { success: boolean; accountName: string; amount: number };
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -161,6 +177,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [vendorBills, setVendorBills] = useState<VendorBill[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  // Add Credit modal states
+  const [isAddCreditModalOpen, setIsAddCreditModalOpen] = useState<boolean>(false);
+  const [addCreditTargetAccount, setAddCreditTargetAccount] = useState<FinancialAccount | null>(null);
 
   // Dynamically compute budget envelopes and live spent amounts from transactions
   const budgets: BudgetEnvelope[] = useMemo(() => {
@@ -867,6 +887,80 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     return importedCount;
   };
 
+  // Add Credit helper
+  const openAddCreditModal = (targetAccount?: FinancialAccount) => {
+    setAddCreditTargetAccount(targetAccount || null);
+    setIsAddCreditModalOpen(true);
+  };
+
+  const closeAddCreditModal = () => {
+    setIsAddCreditModalOpen(false);
+    setAddCreditTargetAccount(null);
+  };
+
+  const addCredit = (params: {
+    accountId?: string;
+    amount: number;
+    merchant?: string;
+    category?: string;
+    entity?: WorkspaceEntity;
+    date?: string;
+    note?: string;
+  }) => {
+    const finalEntity = params.entity || workspace;
+    let targetAccount = accounts.find((a) => a.id === params.accountId);
+
+    if (!targetAccount) {
+      targetAccount =
+        accounts.find(
+          (a) => a.entity === finalEntity && (a.type === "checking" || a.type === "savings")
+        ) || accounts.find((a) => a.entity === finalEntity);
+    }
+
+    let targetAccountId = targetAccount?.id;
+    let targetAccountName = targetAccount?.name;
+
+    if (!targetAccount) {
+      const defaultId = `acc-${finalEntity}-${Date.now()}`;
+      const defaultName =
+        finalEntity === "business" ? "Operating Checking" : "Primary Checking";
+      const newAcc: FinancialAccount = {
+        id: defaultId,
+        name: defaultName,
+        type: "checking",
+        entity: finalEntity,
+        balance: 0,
+        institution: "Primary Ledger",
+        accountNumberMasked: "•••• 1001",
+        currency: settings.currency || "USD",
+      };
+      setAccounts((prev) => [...prev, newAcc]);
+      targetAccountId = defaultId;
+      targetAccountName = defaultName;
+    }
+
+    const creditAmount = Math.abs(params.amount);
+    addTransaction({
+      date: params.date || new Date().toISOString().split("T")[0],
+      merchant: params.merchant?.trim() || "Account Credit Top-Up",
+      category:
+        params.category?.trim() ||
+        (finalEntity === "business" ? "Operating Revenue" : "Deposit / Top-Up"),
+      amount: creditAmount,
+      entity: finalEntity,
+      accountId: targetAccountId || "unlinked",
+      accountName: targetAccountName || "Primary Account",
+      note: params.note?.trim() || undefined,
+      createdVia: "add_credit",
+    });
+
+    return {
+      success: true,
+      accountName: targetAccountName || "Primary Account",
+      amount: creditAmount,
+    };
+  };
+
   return (
     <FinanceContext.Provider
       value={{
@@ -918,6 +1012,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         loadDemoData,
         clearAllData,
         importTransactionsFromCSV,
+        isAddCreditModalOpen,
+        setIsAddCreditModalOpen,
+        openAddCreditModal,
+        closeAddCreditModal,
+        addCreditTargetAccount,
+        addCredit,
       }}
     >
       {children}

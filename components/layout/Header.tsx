@@ -25,6 +25,7 @@ import {
   BuildingOfficeIcon,
   XMarkIcon,
   SparklesIcon,
+  CreditPlusIcon,
 } from "@/components/ui/Icons";
 
 export function Header() {
@@ -39,6 +40,7 @@ export function Header() {
     toggleSidebar,
     activeTab,
     setActiveTab,
+    openAddCreditModal,
   } = useFinance();
 
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -197,6 +199,14 @@ export function Header() {
                 className="absolute right-0 mt-2 w-52 rounded-2xl border border-border-subtle bg-surface p-1.5 shadow-xl text-xs z-50 animate-in fade-in zoom-in-95 duration-100"
                 onClick={() => setIsQuickActionsOpen(false)}
               >
+                <button
+                  type="button"
+                  onClick={() => openAddCreditModal()}
+                  className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-text-primary hover:bg-emerald-500/10 font-medium transition-colors cursor-pointer group"
+                >
+                  <CreditPlusIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300">Add Credit / Top-Up</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsTxModalOpen(true)}

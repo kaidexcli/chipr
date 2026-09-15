@@ -11,6 +11,8 @@ import { InvoicesView } from "@/components/views/InvoicesView";
 import { ReportsView } from "@/components/views/ReportsView";
 import { ProfileView } from "@/components/views/ProfileView";
 import { ChatView } from "@/components/views/ChatView";
+import { AddCreditModal } from "@/components/modals/AddCreditModal";
+import { BrandLoadingScreen } from "@/components/ui/BrandLoadingScreen";
 import {
   DashboardIcon,
   TransactionIcon,
@@ -172,13 +174,24 @@ function MainContent() {
           </span>
         </button>
       </nav>
+
+      {/* Global Add Credit Modal */}
+      <AddCreditModal />
     </div>
   );
 }
 
 export default function Home() {
+  const [showSplash, setShowSplash] = React.useState(true);
+
   return (
     <FinanceProvider>
+      {showSplash && (
+        <BrandLoadingScreen
+          minDuration={2600}
+          onComplete={() => setShowSplash(false)}
+        />
+      )}
       <MainContent />
     </FinanceProvider>
   );

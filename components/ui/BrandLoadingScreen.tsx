@@ -1,69 +1,85 @@
-import type { ComponentPropsWithoutRef } from "react";
-import { BrandMark, type BrandPartner } from "@/components/ui/BrandMark";
+"use client";
 
-export interface BrandLoadingScreenProps
-  extends Omit<ComponentPropsWithoutRef<"section">, "children"> {
-  /** Optional partner shown in the launch lockup; null keeps it Chipr-only. */
-  partner?: BrandPartner;
-  /** A concise, contextual status message shown beneath the loading title. */
+import { ChiprBirdMascot } from "@/components/ui/ChiprBirdMascot";
+import { useEffect, useState, type ComponentPropsWithoutRef } from "react";
+
+export interface BrandLoadingScreenProps extends ComponentPropsWithoutRef<"div"> {
+  className?: string;
+  partner?: unknown;
   message?: string;
+  /** Duration in ms to stay visible before initiating smooth exit fade */
+  minDuration?: number;
+  /** Callback fired when the exit fade animation finishes */
+  onComplete?: () => void;
 }
 
 /**
- * An accessible, server-safe loading experience for route streaming and the
- * FinanceProvider hydration window. It has no browser dependencies, so it can
- * be rendered from either side of the Server/Client Component boundary.
+ * BrandLoadingScreen — High-end minimalist loading & splash screen.
+ * Displays only the Chipr bird mascot and the "Chipr" wordmark in a smooth fading animation
+ * on a plain canvas background.
  */
 export function BrandLoadingScreen({
   className = "",
-  message = "Preparing your financial workspace.",
-  partner = "avtica",
+  minDuration = 2600,
+  onComplete,
+  partner: _partner,
+  message: _message,
   ...props
 }: BrandLoadingScreenProps) {
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  useEffect(() => {
+    if (!onComplete && minDuration <= 0) return;
+
+    // Display for the requested duration before starting exit fade
+    const timer = setTimeout(() => {
+      setIsFadingOut(true);
+      const exitTimer = setTimeout(() => {
+        onComplete?.();
+      }, 450); // 450ms smooth fadeout
+      return () => clearTimeout(exitTimer);
+    }, minDuration);
+
+    return () => clearTimeout(timer);
+  }, [minDuration, onComplete]);
+
   return (
-    <section
+    <div
       {...props}
       aria-busy="true"
       aria-live="polite"
-      className={`relative grid min-h-dvh place-items-center overflow-hidden bg-canvas px-5 py-8 sm:px-8 ${className}`}
       role="status"
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-canvas select-none transition-opacity duration-500 ease-out ${
+        isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
+      } ${className}`}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-brand/10 blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-inflow/10 blur-3xl" />
-      </div>
+      <style>{`
+        @keyframes chiprBreatheFade {
+          0%, 100% {
+            opacity: 0.18;
+            transform: scale(0.975);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .chipr-fading-wordmark {
+          animation: chiprBreatheFade 2.4s ease-in-out infinite;
+          will-change: opacity, transform;
+        }
+      `}</style>
 
-      <div className="relative w-full max-w-sm rounded-3xl border border-border-subtle bg-surface p-6 text-center shadow-sm sm:p-8">
-        <BrandMark partner={partner} size="lg" />
+      <div className="flex flex-col items-center justify-center">
+        {/* Bird Mascot Logo */}
+        <ChiprBirdMascot size="lg" animated withSparkles={false} />
 
-        <div className="mt-8 flex justify-center" aria-hidden="true">
-          <span className="relative flex h-12 w-12 items-center justify-center">
-            <span className="absolute inset-0 rounded-full border-2 border-border-subtle" />
-            <span className="absolute inset-0 rounded-full border-2 border-border-subtle border-t-brand motion-safe:animate-spin" />
-            <span className="h-2.5 w-2.5 rounded-full bg-brand" />
-          </span>
-        </div>
-
-        <h1 className="mt-5 text-lg font-bold tracking-tight text-text-primary">
-          Getting your workspace ready
+        {/* "Chipr" Wordmark with Smooth Fading Animation */}
+        <h1 className="chipr-fading-wordmark mt-5 text-4xl sm:text-5xl font-black tracking-tight text-text-primary">
+          Chipr
         </h1>
-        <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-text-secondary">
-          {message}
-        </p>
-        <p className="mt-2 text-xs text-text-muted">
-          Personal and business activity stay distinctly organized.
-        </p>
-
-        <div aria-hidden="true" className="mt-7 space-y-3 border-t border-border-subtle pt-5">
-          <div className="flex items-center justify-between gap-4">
-            <span className="h-2 w-20 rounded-full bg-raised motion-safe:animate-pulse" />
-            <span className="h-2 w-12 rounded-full bg-raised motion-safe:animate-pulse" />
-          </div>
-          <div className="h-2 w-full rounded-full bg-raised motion-safe:animate-pulse" />
-          <div className="h-2 w-3/4 rounded-full bg-raised motion-safe:animate-pulse" />
-        </div>
       </div>
-    </section>
+    </div>
   );
 }
 

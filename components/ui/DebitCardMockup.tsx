@@ -3,14 +3,14 @@
 import React, { useState } from "react";
 import { useFinance } from "@/context/FinanceContext";
 import { MoneyAmount } from "@/components/ui/MoneyAmount";
-import { LogoMark } from "@/components/ui/Icons";
+import { LogoMark, CreditPlusIcon } from "@/components/ui/Icons";
 
 interface DebitCardMockupProps {
   className?: string;
 }
 
 export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
-  const { workspace, settings, metrics, privacyMask } = useFinance();
+  const { workspace, settings, metrics, privacyMask, openAddCreditModal } = useFinance();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
 
@@ -120,11 +120,24 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
                 </svg>
               </div>
 
-              {/* Balance Readout on Card */}
-              <div className="text-right">
-                <span className="text-[9px] font-mono uppercase tracking-wider text-white/50 block">
-                  Available Balance
-                </span>
+              {/* Balance Readout on Card - Click to Add Credit */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openAddCreditModal();
+                }}
+                className="text-right group/credit cursor-pointer rounded-xl px-2.5 py-1.5 -mr-1.5 transition-all hover:bg-white/15 active:scale-95 ring-1 ring-transparent hover:ring-white/20"
+                title="Financial Tracker: Click to Add Credit"
+              >
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="text-[9px] font-mono uppercase tracking-wider text-white/60 block">
+                    Available Balance
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 rounded px-1 text-[8px] font-bold text-emerald-300 bg-emerald-500/25 border border-emerald-400/30 group-hover/credit:bg-emerald-500/40 transition-colors">
+                    <CreditPlusIcon className="w-2.5 h-2.5" />
+                    <span>Top-Up</span>
+                  </span>
+                </div>
                 <MoneyAmount
                   amount={cardBalance}
                   size="sm"
@@ -253,6 +266,20 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
 
       {/* Interactive Quick Action Bar */}
       <div className="flex items-center justify-between gap-2 px-1">
+        {/* Add Credit Action */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            openAddCreditModal();
+          }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white transition-all cursor-pointer shadow-xs border border-emerald-500/80"
+          title="Add credit or top up funds to your account"
+        >
+          <CreditPlusIcon className="w-3.5 h-3.5" />
+          <span>Add Credit</span>
+        </button>
+
         {/* Flip Card Action */}
         <button
           type="button"
@@ -260,7 +287,7 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
             e.stopPropagation();
             setIsFlipped((prev) => !prev);
           }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold bg-surface border border-border-subtle text-text-secondary hover:bg-raised hover:text-text-primary transition-all cursor-pointer shadow-xs"
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-semibold bg-surface border border-border-subtle text-text-secondary hover:bg-raised hover:text-text-primary transition-all cursor-pointer shadow-xs"
           title="Flip card between front and back"
         >
           <svg
@@ -285,7 +312,7 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
             e.stopPropagation();
             setIsFrozen((prev) => !prev);
           }}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${
             isFrozen
               ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 border-red-300 dark:border-red-800"
               : "bg-surface border-border-subtle text-text-secondary hover:bg-raised hover:text-text-primary"
@@ -307,6 +334,11 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
           <span>{isFrozen ? "Unlock" : "Lock"}</span>
         </button>
       </div>
+
+      {/* Financial Tracker Hint */}
+      <p className="text-[10px] text-center text-text-muted font-mono tracking-tight opacity-75">
+        Financial Tracker Mode • Use &ldquo;Add Credit&rdquo; to simulate balance inflows
+      </p>
     </div>
   );
 }
