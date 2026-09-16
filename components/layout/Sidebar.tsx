@@ -443,7 +443,7 @@ function SidebarBody({
           title="Manage account profile & business settings"
         >
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-brand to-indigo-500 text-white font-bold text-xs shrink-0 shadow-xs">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-tr from-brand to-indigo-500 text-white font-bold text-xs shrink-0 shadow-xs">
               {userInitials}
             </div>
             <div className="min-w-0">
@@ -631,7 +631,7 @@ export function Sidebar() {
 
         {/* Drawer Container with Hardware-Accelerated Sliding Animation */}
         <div
-          className={`relative flex flex-col w-[290px] max-w-[85vw] h-full bg-surface border-r border-border-subtle p-4 shadow-2xl z-10 transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
+          className={`relative flex flex-col w-72.5 max-w-[85vw] h-full bg-surface border-r border-border-subtle p-4 shadow-2xl z-10 transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
             isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
