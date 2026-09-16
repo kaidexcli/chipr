@@ -959,40 +959,8 @@ Your financial workspace currently has:
       </div>
 
       {/* 3. Input Console */}
-      <div className="border-t border-border-subtle bg-surface p-3 sm:p-4 shrink-0 space-y-2">
-        <div className="relative flex flex-col rounded-2xl border border-border-subtle bg-canvas focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 transition-all shadow-xs">
-          {/* Active Context Tag inside input */}
-          <div className="flex items-center justify-between px-3 pt-2.5 pb-1 text-[11px] border-b border-border-subtle/50">
-            <div className="flex items-center gap-1.5 text-text-muted">
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  contextScope === "personal"
-                    ? "bg-indigo-500"
-                    : contextScope === "business"
-                    ? "bg-sky-500"
-                    : "bg-brand"
-                }`}
-              />
-              <span>Scoping:</span>
-              <span className="font-semibold text-text-primary capitalize">
-                {contextScope === "all" ? "Consolidated (All Entities)" : `${contextScope} Context`}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsSettingsModalOpen(true)}
-                className="text-[10px] text-text-muted hover:text-brand transition-colors font-mono hidden sm:inline"
-              >
-                Model: {activeModelMeta.name}
-              </button>
-              <span className="text-[10px] text-text-muted hidden sm:inline font-mono">
-                Shift + Enter for new line
-              </span>
-            </div>
-          </div>
-
+      <div className="border-t border-border-subtle bg-surface/80 p-3 sm:p-4 shrink-0 space-y-1.5">
+        <div className="relative flex flex-col rounded-2xl border border-border-subtle bg-canvas focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 transition-all shadow-xs p-2.5 sm:p-3">
           {/* Textarea */}
           <textarea
             ref={textareaRef}
@@ -1001,12 +969,44 @@ Your financial workspace currently has:
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             placeholder="Type your expense here (e.g. 'Spent ₱450 on groceries', 'Bought clothes at Zara ₱1,850', 'Electric bill ₱2,400')..."
-            className="w-full bg-transparent px-3.5 py-2.5 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-[50px] max-h-[160px]"
+            className="w-full bg-transparent p-1 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-[48px] max-h-[160px]"
           />
 
-          {/* Action Row */}
-          <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
-            <div className="flex items-center gap-1 text-[11px] text-text-muted">
+          {/* Bottom Action Row (Unified inside single input card) */}
+          <div className="flex items-center justify-between pt-2 border-t border-border-subtle/40">
+            <div className="flex items-center gap-2">
+              {/* Context Tag Pill */}
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                  contextScope === "personal"
+                    ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300"
+                    : contextScope === "business"
+                    ? "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300"
+                    : "bg-brand/10 text-brand"
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    contextScope === "personal"
+                      ? "bg-indigo-500"
+                      : contextScope === "business"
+                      ? "bg-sky-500"
+                      : "bg-brand"
+                  }`}
+                />
+                <span className="capitalize">{contextScope}</span>
+              </span>
+
+              {/* Model Pill */}
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="text-[10px] text-text-muted hover:text-brand transition-colors font-mono hidden sm:inline-block cursor-pointer"
+                title="Change AI Model"
+              >
+                {activeModelMeta.name}
+              </button>
+
               {inputValue.length > 0 && (
                 <button
                   type="button"
@@ -1016,19 +1016,23 @@ Your financial workspace currently has:
                       textareaRef.current.style.height = "auto";
                     }
                   }}
-                  className="text-text-muted hover:text-text-primary hover:underline cursor-pointer"
+                  className="text-[11px] text-text-muted hover:text-text-primary hover:underline cursor-pointer ml-1"
                 >
                   Clear
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[10px] text-text-muted hidden md:inline font-mono">
+                Shift + Enter for new line
+              </span>
+
               {isThinking ? (
                 <button
                   type="button"
                   onClick={handleStopGeneration}
-                  className="flex items-center gap-1.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/50 px-3 sm:px-4 py-2 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-xs hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/50 px-3 sm:px-4 py-1.5 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-xs hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-all cursor-pointer"
                 >
                   <StopIcon className="w-3.5 h-3.5" />
                   <span>Stop</span>
@@ -1038,7 +1042,7 @@ Your financial workspace currently has:
                   type="button"
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim()}
-                  className="flex items-center gap-1.5 rounded-xl bg-brand px-3 sm:px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-hover active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-brand transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-brand px-3.5 sm:px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-brand-hover active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-brand transition-all cursor-pointer"
                 >
                   <span>Send</span>
                   <PaperAirplaneIcon className="w-3.5 h-3.5" />
