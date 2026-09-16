@@ -157,6 +157,11 @@ function initializeSchema(db: Database.Database) {
       metadata TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS app_config (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 
   try {
@@ -720,4 +725,27 @@ export function clearDbData() {
     WHERE id = 'default'
   `).run();
 }
+
+export function getDbAppConfig(key: string): string | null {
+  const db = getDb();
+  try {
+    const row = db.prepare("SELECT value FROM app_config WHERE key = ?").get(key) as
+      | { value: string }
+      | undefined;
+    return row ? row.value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setDbAppConfig(key: string, value: string): void {
+  const db = getDb();
+  db.prepare("INSERT OR REPLACE INTO app_config (key, value) VALUES (?, ?)").run(key, value);
+}
+
+export function deleteDbAppConfig(key: string): void {
+  const db = getDb();
+  db.prepare("DELETE FROM app_config WHERE key = ?").run(key);
+}
+
 

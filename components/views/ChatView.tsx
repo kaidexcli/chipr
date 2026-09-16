@@ -16,15 +16,13 @@ import {
   BuildingOfficeIcon,
   ShieldCheckIcon,
   ArrowsExchangeIcon,
-  KeyIcon,
   ZapIcon,
   TransactionIcon,
 } from "@/components/ui/Icons";
 import { GroqSettingsModal } from "@/components/modals/GroqSettingsModal";
-import { DEFAULT_GROQ_MODEL, AVAILABLE_GROQ_MODELS } from "@/lib/groq";
+import { DEFAULT_GROQ_MODEL, AVAILABLE_GROQ_MODELS } from "@/lib/groq-models";
 import { extractTransactionFromAiResponse } from "@/rag";
 
-const GROQ_API_KEY_STORAGE = "chipr_groq_api_key";
 const GROQ_MODEL_STORAGE = "chipr_groq_model";
 
 export function ChatView() {
@@ -59,18 +57,8 @@ export function ChatView() {
   const [feedback, setFeedback] = useState<Record<string, "up" | "down">>({});
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
 
-  // Groq API & Model state (lazy load from localStorage)
-  const [apiKey, setApiKey] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        return localStorage.getItem(GROQ_API_KEY_STORAGE) || "";
-      } catch {
-        return "";
-      }
-    }
-    return "";
-  });
-  const [selectedModel, setSelectedModel] = useState(() => {
+  // Centralized Groq Model state (synchronized with server database)
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(GROQ_MODEL_STORAGE);
@@ -84,63 +72,42 @@ export function ChatView() {
     }
     return DEFAULT_GROQ_MODEL;
   });
-  const [isServerEnvConfigured, setIsServerEnvConfigured] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  // Groq is centrally active on the server for all devices
+  const isGroqActive = true;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Check server environment configuration on mount
+  // Fetch unified server settings on mount
   useEffect(() => {
-    fetch("/api/chat")
+    fetch("/api/chat/settings")
       .then((res) => res.json())
       .then((data) => {
-        if (data.isConfigured) {
-          setIsServerEnvConfigured(true);
-        }
-        if (data.defaultModel) {
+        if (data && data.model && !data.model.includes("llama")) {
+          setSelectedModel(data.model);
           try {
-            const stored = localStorage.getItem(GROQ_MODEL_STORAGE);
-            if (!stored || stored.includes("llama")) {
-              setSelectedModel(data.defaultModel);
-              localStorage.setItem(GROQ_MODEL_STORAGE, data.defaultModel);
-            }
-          } catch {
-            // Ignore storage error
-          }
+            localStorage.setItem(GROQ_MODEL_STORAGE, data.model);
+          } catch {}
         }
       })
-      .catch(() => {
-        // Ignore connection check failure
-      });
+      .catch(() => {});
   }, []);
 
-  // Save API key
-  const handleSaveApiKey = (newKey: string) => {
-    setApiKey(newKey);
-    try {
-      if (newKey) {
-        localStorage.setItem(GROQ_API_KEY_STORAGE, newKey);
-      } else {
-        localStorage.removeItem(GROQ_API_KEY_STORAGE);
-      }
-    } catch {
-      // Ignore storage error
-    }
-  };
-
-  // Save Model
+  // Update model selection globally across all devices
   const handleSelectModel = (modelId: string) => {
     setSelectedModel(modelId);
     try {
       localStorage.setItem(GROQ_MODEL_STORAGE, modelId);
-    } catch {
-      // Ignore storage error
-    }
+    } catch {}
+    fetch("/api/chat/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: modelId }),
+    }).catch(() => {});
   };
-
-  const isGroqActive = Boolean(isServerEnvConfigured || apiKey.trim());
 
   // Auto-scroll to bottom on new messages
   const scrollToBottom = () => {
@@ -246,14 +213,12 @@ export function ChatView() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(apiKey ? { "x-groq-api-key": apiKey } : {}),
         },
         signal: abortController.signal,
         body: JSON.stringify({
           messages: messagesPayload,
           contextScope,
           model: selectedModel,
-          apiKey: apiKey || undefined,
           stream: true,
           financialContext: {
             accounts,
@@ -268,20 +233,12 @@ export function ChatView() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        if (errData.code === "MISSING_API_KEY") {
-          updateChatMessage(assistantMsg.id, {
-            content: `⚠️ **Groq API Key Required**\n\nTo activate live AI expense categorization, please configure your Groq API key:\n\n• **Direct in App**: Click the **Key** icon in the toolbar above to paste your API key.\n• **Environment Variable**: Add \`GROQ_API_KEY=gsk_...\` in your **\`.env.local\`** file.\n\n*You can obtain a free API key at [console.groq.com/keys](https://console.groq.com/keys).*`,
-            status: "error",
-          });
-          setIsSettingsModalOpen(true);
-        } else {
-          updateChatMessage(assistantMsg.id, {
-            content: `❌ **Groq API Error**: ${
-              errData.error || errData.message || "Failed to generate response."
-            }`,
-            status: "error",
-          });
-        }
+        updateChatMessage(assistantMsg.id, {
+          content: `❌ **Groq AI Error**: ${
+            errData.error || errData.message || "Failed to generate response."
+          }`,
+          status: "error",
+        });
         setIsThinking(false);
         return;
       }
@@ -609,10 +566,10 @@ Your financial workspace currently has:
                 ? "border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse"
                 : "border-border-subtle bg-canvas text-text-secondary hover:bg-raised hover:text-text-primary"
             }`}
-            title="Groq AI Settings (Model & API Key)"
-            aria-label="Groq AI Settings"
+            title="Groq AI Engine & Model Settings"
+            aria-label="Groq AI Engine & Model Settings"
           >
-            <KeyIcon className="w-3.5 h-3.5" />
+            <SparklesIcon className="w-3.5 h-3.5" />
           </button>
 
           {/* Export Transcript Button */}
@@ -670,25 +627,6 @@ Your financial workspace currently has:
               Cancel
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Missing Key Notification Banner (if unconfigured) */}
-      {!isGroqActive && (
-        <div className="flex items-center justify-between bg-gradient-to-r from-amber-500/10 via-brand/10 to-indigo-500/10 px-4 py-2 text-xs border-b border-border-subtle shrink-0">
-          <div className="flex items-center gap-2 text-text-primary min-w-0">
-            <ZapIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span className="truncate">
-              Groq API key not yet connected. Add your free key to activate live AI expense categorization.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsSettingsModalOpen(true)}
-            className="ml-3 shrink-0 rounded-lg bg-brand px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-hover transition-colors cursor-pointer shadow-xs"
-          >
-            Connect Groq
-          </button>
         </div>
       )}
 
@@ -1120,11 +1058,8 @@ Your financial workspace currently has:
       <GroqSettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
-        apiKey={apiKey}
-        onSaveApiKey={handleSaveApiKey}
         selectedModel={selectedModel}
         onSelectModel={handleSelectModel}
-        isServerEnvConfigured={isServerEnvConfigured}
       />
     </div>
   );

@@ -1,48 +1,55 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AVAILABLE_GROQ_MODELS } from "@/lib/groq";
+import { AVAILABLE_GROQ_MODELS } from "@/lib/groq-models";
 import {
   SparklesIcon,
   CheckIcon,
   ShieldCheckIcon,
-  RefreshIcon,
   ZapIcon,
+  LockClosedIcon,
 } from "@/components/ui/Icons";
 
 interface GroqSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  apiKey: string;
-  onSaveApiKey: (key: string) => void;
   selectedModel: string;
   onSelectModel: (model: string) => void;
-  isServerEnvConfigured: boolean;
 }
 
 export function GroqSettingsModal({
   isOpen,
   onClose,
-  apiKey,
-  onSaveApiKey,
   selectedModel,
   onSelectModel,
-  isServerEnvConfigured,
 }: GroqSettingsModalProps) {
-  const [inputKey, setInputKey] = useState(apiKey);
-  const [prevApiKey, setPrevApiKey] = useState(apiKey);
-  if (apiKey !== prevApiKey) {
-    setPrevApiKey(apiKey);
-    setInputKey(apiKey);
-  }
-  const [showKey, setShowKey] = useState(false);
   const [testingStatus, setTestingStatus] = useState<
     "idle" | "testing" | "success" | "error"
   >("idle");
   const [testErrorMessage, setTestErrorMessage] = useState("");
   const [saveConfirmation, setSaveConfirmation] = useState(false);
+  const [isConfiguredOnServer, setIsConfiguredOnServer] = useState(true);
 
-  // Handle ESC key
+  // Fetch server status on modal open
+  useEffect(() => {
+    if (isOpen) {
+      setTestingStatus("idle");
+      setTestErrorMessage("");
+      fetch("/api/chat/settings")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data) {
+            setIsConfiguredOnServer(Boolean(data.isConfigured));
+            if (data.model && data.model !== selectedModel) {
+              onSelectModel(data.model);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
+
+  // Handle ESC key to dismiss
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -55,6 +62,7 @@ export function GroqSettingsModal({
 
   if (!isOpen) return null;
 
+  // Test server connection to Groq API
   const handleTestConnection = async () => {
     setTestingStatus("testing");
     setTestErrorMessage("");
@@ -62,8 +70,6 @@ export function GroqSettingsModal({
     try {
       const res = await fetch("/api/chat/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: inputKey.trim() }),
       });
 
       const data = await res.json();
@@ -71,27 +77,33 @@ export function GroqSettingsModal({
         setTestingStatus("success");
       } else {
         setTestingStatus("error");
-        setTestErrorMessage(data.message || "Invalid credentials or unauthorized.");
+        setTestErrorMessage(
+          data.message || "Unable to authenticate with Groq API."
+        );
       }
     } catch {
       setTestingStatus("error");
-      setTestErrorMessage("Network error verifying API key.");
+      setTestErrorMessage("Network error connecting to server verification.");
     }
   };
 
-  const handleSave = () => {
-    onSaveApiKey(inputKey.trim());
-    setSaveConfirmation(true);
-    setTimeout(() => {
-      setSaveConfirmation(false);
-      onClose();
-    }, 800);
-  };
+  // Save selected model globally to server SQLite database
+  const handleSave = async () => {
+    try {
+      await fetch("/api/chat/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: selectedModel }),
+      });
 
-  const handleClear = () => {
-    setInputKey("");
-    onSaveApiKey("");
-    setTestingStatus("idle");
+      setSaveConfirmation(true);
+      setTimeout(() => {
+        setSaveConfirmation(false);
+        onClose();
+      }, 600);
+    } catch {
+      onClose();
+    }
   };
 
   return (
@@ -116,10 +128,10 @@ export function GroqSettingsModal({
                 id="groq-settings-title"
                 className="text-base font-extrabold text-text-primary tracking-tight"
               >
-                Groq AI Model & API Configuration
+                Groq AI Engine & Model Settings
               </h3>
               <p className="text-xs text-text-muted">
-                Ultra-fast LPU inference engine for financial analysis
+                Server-side inference automatically synchronized across all your devices
               </p>
             </div>
           </div>
@@ -147,203 +159,150 @@ export function GroqSettingsModal({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-5">
-          {/* Environment Status Notice */}
-          {isServerEnvConfigured ? (
-            <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs text-emerald-800 dark:text-emerald-200">
-              <ShieldCheckIcon className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="flex-1 overflow-y-auto py-4 space-y-4">
+          {/* Server Status Banner */}
+          {isConfiguredOnServer ? (
+            <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/80 dark:bg-emerald-950/40 p-3.5 text-xs text-emerald-800 dark:text-emerald-200 shadow-2xs">
+              <ShieldCheckIcon className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold">Server Environment Detected: </span>
-                <code className="px-1 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 font-mono text-[11px]">
-                  GROQ_API_KEY
-                </code>{" "}
-                is set in <code className="font-mono text-[11px]">.env.local</code>. You can override it below or leave it blank to use the server key.
+                <p className="font-bold">Zero-Configuration Multi-Device Mode Active</p>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5 leading-relaxed">
+                  Groq AI inference runs directly through your server environment (<code className="font-mono font-semibold">GROQ_API_KEY</code>). You do not need to configure or input any API keys on any phone, tablet, or secondary device.
+                </p>
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3 text-xs text-amber-800 dark:text-amber-200">
-              <ZapIcon className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/80 dark:bg-amber-950/40 p-3.5 text-xs text-amber-800 dark:text-amber-200 shadow-2xs">
+              <span className="text-amber-600 font-bold shrink-0 mt-0.5">⚠️</span>
               <div>
-                <span className="font-bold">Enter your Groq API Key: </span>
-                Paste your API key below to activate live AI answers, or add{" "}
-                <code className="font-mono text-[11px] bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded">
-                  GROQ_API_KEY=gsk_...
-                </code>{" "}
-                to your project&apos;s <code className="font-mono text-[11px]">.env.local</code>.
+                <p className="font-bold">Server Environment Configuration Missing</p>
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
+                  Please specify <code className="font-mono font-semibold">GROQ_API_KEY</code> and <code className="font-mono font-semibold">GROQ_MODEL</code> in your server&apos;s <code className="font-mono font-semibold">.env.local</code> file.
+                </p>
               </div>
             </div>
           )}
 
-          {/* API Key Input Section */}
+          {/* Model Selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <label htmlFor="groq-api-key" className="font-bold text-text-primary">
-                Groq API Key
+              <label className="font-bold text-text-primary">
+                Active Inference Model
               </label>
-              <a
-                href="https://console.groq.com/keys"
-                target="_blank"
-                rel="noreferrer"
-                className="text-brand hover:underline font-semibold flex items-center gap-1"
-              >
-                <span>Get API key from Groq Console</span>
-                <span className="text-[10px]">↗</span>
-              </a>
+              <span className="text-[10px] text-text-muted font-medium">
+                Groq Ultra-Fast LPU Platform
+              </span>
             </div>
 
-            <div className="relative flex items-center">
-              <input
-                id="groq-api-key"
-                type={showKey ? "text" : "password"}
-                value={inputKey}
-                onChange={(e) => {
-                  setInputKey(e.target.value);
-                  setTestingStatus("idle");
-                }}
-                placeholder={
-                  isServerEnvConfigured
-                    ? "Using GROQ_API_KEY from environment (paste here to override)"
-                    : "gsk_••••••••••••••••••••••••••••••••"
-                }
-                className="w-full rounded-xl border border-border-subtle bg-canvas px-3.5 py-2.5 pr-20 text-xs font-mono text-text-primary placeholder:text-text-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all"
-              />
-              <div className="absolute right-2 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="px-2 py-1 text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-                >
-                  {showKey ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
-
-            {/* Test Connection Button & Status */}
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleTestConnection}
-                  disabled={testingStatus === "testing" || (!inputKey.trim() && !isServerEnvConfigured)}
-                  className="rounded-lg border border-border-subtle bg-raised px-2.5 py-1 text-[11px] font-semibold text-text-secondary hover:text-text-primary hover:bg-canvas disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  {testingStatus === "testing" ? (
-                    <>
-                      <RefreshIcon className="w-3 h-3 animate-spin text-brand" />
-                      <span>Verifying...</span>
-                    </>
-                  ) : (
-                    <span>Test Connection</span>
-                  )}
-                </button>
-
-                {inputKey && (
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="text-[11px] text-text-muted hover:text-rose-500 transition-colors cursor-pointer"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Status Indicator */}
-              {testingStatus === "success" && (
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 animate-in fade-in duration-150">
-                  <CheckIcon className="w-3.5 h-3.5" />
-                  Connection Verified!
-                </span>
-              )}
-              {testingStatus === "error" && (
-                <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 truncate max-w-[200px]" title={testErrorMessage}>
-                  {testErrorMessage || "Verification failed"}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Model Selector */}
-          <div className="space-y-2 pt-2 border-t border-border-subtle">
-            <label className="block text-xs font-bold text-text-primary">
-              Select Groq LLM Architecture
-            </label>
-
-            <div className="grid grid-cols-1 gap-2">
+            <div className="space-y-2">
               {AVAILABLE_GROQ_MODELS.map((model) => {
                 const isSelected = selectedModel === model.id;
                 return (
-                  <button
-                    type="button"
+                  <div
                     key={model.id}
                     onClick={() => onSelectModel(model.id)}
-                    className={`flex items-start justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
                       isSelected
-                        ? "border-brand bg-brand/5 dark:bg-brand/10 shadow-xs"
-                        : "border-border-subtle bg-canvas hover:border-border-strong hover:bg-raised"
+                        ? "border-brand bg-brand/5 dark:bg-brand/10 shadow-xs ring-1 ring-brand/30"
+                        : "border-border-subtle bg-canvas hover:border-border-strong hover:bg-raised/50"
                     }`}
                   >
-                    <div className="space-y-0.5 min-w-0 pr-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs font-bold ${
-                            isSelected ? "text-brand" : "text-text-primary"
-                          }`}
-                        >
+                        <input
+                          type="radio"
+                          name="groq-model"
+                          checked={isSelected}
+                          onChange={() => onSelectModel(model.id)}
+                          className="text-brand focus:ring-brand cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-text-primary">
                           {model.name}
                         </span>
                         {model.recommended && (
-                          <span className="rounded-full bg-brand/10 text-brand px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wide">
+                          <span className="rounded-md bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
                             Recommended
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-text-muted leading-snug">
-                        {model.description}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col items-end shrink-0 text-right">
-                      <span className="font-mono text-[10px] text-text-muted">
+                      <span className="text-[10px] font-mono text-text-muted">
                         {(model.contextWindow / 1000).toFixed(0)}k context
                       </span>
-                      {isSelected && (
-                        <CheckIcon className="w-4 h-4 text-brand mt-1.5" />
-                      )}
                     </div>
-                  </button>
+                    <p className="text-[11px] text-text-muted mt-1 pl-5">
+                      {model.description}
+                    </p>
+                  </div>
                 );
               })}
             </div>
           </div>
+
+          {/* Server Connection Test */}
+          <div className="pt-2 border-t border-border-subtle">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={testingStatus === "testing"}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-canvas px-3 py-1.5 text-xs font-semibold text-text-primary hover:bg-raised transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {testingStatus === "testing" ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                    <span>Testing Server Connection...</span>
+                  </>
+                ) : (
+                  <>
+                    <ZapIcon className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Test Server Groq Connection</span>
+                  </>
+                )}
+              </button>
+
+              {testingStatus === "success" && (
+                <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold animate-in fade-in">
+                  <CheckIcon className="w-4 h-4" />
+                  <span>Connection Verified!</span>
+                </div>
+              )}
+
+              {testingStatus === "error" && (
+                <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+                  {testErrorMessage}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-border-subtle shrink-0">
-          <span className="text-[10px] text-text-muted font-mono">
-            Encrypted in local browser storage
-          </span>
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-border-subtle">
+          <div className="flex items-center gap-1.5 text-xs text-text-muted">
+            <LockClosedIcon className="w-3.5 h-3.5 text-brand" />
+            <span className="text-[11px]">Synchronized across all devices</span>
+          </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-raised transition-colors cursor-pointer"
+              className="rounded-xl px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-raised transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="flex items-center gap-1.5 rounded-xl bg-brand px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-brand-hover active:scale-[0.98] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-brand-hover active:scale-[0.98] transition-all cursor-pointer"
             >
               {saveConfirmation ? (
                 <>
                   <CheckIcon className="w-3.5 h-3.5" />
-                  Saved!
+                  <span>Saved!</span>
                 </>
               ) : (
-                "Save Preferences"
+                <span>Apply Selection</span>
               )}
             </button>
           </div>

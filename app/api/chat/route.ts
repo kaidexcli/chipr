@@ -4,6 +4,8 @@ import {
   DEFAULT_GROQ_MODEL,
   AVAILABLE_GROQ_MODELS,
   resolveActiveModel,
+  getActiveGroqApiKey,
+  getActiveGroqModel,
 } from "@/lib/groq";
 import {
   buildFinancialSystemPrompt,
@@ -55,16 +57,17 @@ interface ChatRequestBody {
  * and return available models and categories.
  */
 export async function GET() {
-  const apiKey = process.env.GROQ_API_KEY;
-  const isEnvConfigured = Boolean(apiKey && apiKey.trim().length > 0);
+  const isConfigured = Boolean(getActiveGroqApiKey());
+  const activeModel = getActiveGroqModel();
   const categories = getDbCategories();
 
   return NextResponse.json({
     status: "ok",
-    isConfigured: isEnvConfigured,
-    defaultModel: process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL,
+    isConfigured,
+    defaultModel: activeModel,
     models: AVAILABLE_GROQ_MODELS,
     categoriesCount: categories.length,
+    multiDeviceSync: true,
   });
 }
 
@@ -81,23 +84,18 @@ export async function POST(req: NextRequest) {
       contextScope = "personal",
       financialContext,
       model: requestedModel,
-      apiKey: clientApiKey,
       stream = true,
     } = body;
 
-    // Resolve API key priority: Header > Client Body > Environment Variable
-    const headerKey = req.headers.get("x-groq-api-key");
-    const resolvedApiKey = headerKey || clientApiKey || process.env.GROQ_API_KEY;
-
-    if (!resolvedApiKey || !resolvedApiKey.trim()) {
+    // Resolve unified Groq API key strictly from server environment (GROQ_API_KEY)
+    const resolvedApiKey = getActiveGroqApiKey();
+    if (!resolvedApiKey) {
       return NextResponse.json(
         {
-          error: "Missing Groq API Key",
-          code: "MISSING_API_KEY",
-          message:
-            "Please set GROQ_API_KEY in your .env.local file or supply your key in the Chat Settings modal.",
+          error:
+            "GROQ_API_KEY is not configured on the server. Please ensure GROQ_API_KEY is set in your .env.local file or server environment.",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
@@ -111,10 +109,8 @@ export async function POST(req: NextRequest) {
     const groq = getGroqClient(resolvedApiKey);
 
     // Resolve model to an active one on Groq (prevents 404 errors)
-    const activeModel = await resolveActiveModel(
-      groq,
-      requestedModel || process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL
-    );
+    const targetModel = getActiveGroqModel(requestedModel);
+    const activeModel = await resolveActiveModel(groq, targetModel);
 
     // Pull canonical categories and fresh ledger snapshot from SQLite database
     const dbCategories = getDbCategories();
