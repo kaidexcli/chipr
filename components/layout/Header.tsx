@@ -26,6 +26,8 @@ import {
   XMarkIcon,
   SparklesIcon,
   CreditPlusIcon,
+  LogoutIcon,
+  LockClosedIcon,
 } from "@/components/ui/Icons";
 
 export function Header() {
@@ -41,6 +43,7 @@ export function Header() {
     activeTab,
     setActiveTab,
     openAddCreditModal,
+    logout,
   } = useFinance();
 
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -152,7 +155,7 @@ export function Header() {
           <button
             type="button"
             onClick={togglePrivacyMask}
-            title={privacyMask ? "Reveal financial balances" : "Obfuscate balances ($••••••)"}
+            title={privacyMask ? "Reveal financial balances" : "Obfuscate balances (₱••••••)"}
             className={`hidden sm:flex h-8 sm:h-9 items-center justify-center gap-1.5 rounded-xl border border-border-subtle px-2 sm:px-2.5 text-xs font-semibold transition-all cursor-pointer ${
               privacyMask
                 ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800"
@@ -162,7 +165,7 @@ export function Header() {
             {privacyMask ? (
               <>
                 <EyeSlashIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span className="font-mono hidden sm:inline">$••••••</span>
+                <span className="font-mono hidden sm:inline">₱••••••</span>
               </>
             ) : (
               <>
@@ -256,6 +259,20 @@ export function Header() {
                   <UserIcon className="w-4 h-4 text-indigo-500" />
                   <span>Profile & Settings</span>
                 </button>
+                <div className="my-1 border-t border-border-subtle" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsQuickActionsOpen(false);
+                    if (confirm("Lock workspace and sign out of Chipr?")) {
+                      logout();
+                    }
+                  }}
+                  className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium transition-colors cursor-pointer"
+                >
+                  <LogoutIcon className="w-4 h-4" />
+                  <span>Lock & Sign Out</span>
+                </button>
               </div>
             )}
           </div>
@@ -297,6 +314,21 @@ export function Header() {
                 </span>
               </>
             )}
+          </button>
+
+          {/* Lock Workspace Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Lock workspace and sign out of Chipr?")) {
+                logout();
+              }
+            }}
+            title="Lock workspace and sign out"
+            aria-label="Sign out"
+            className="flex h-8 sm:h-9 w-8 sm:w-9 items-center justify-center rounded-xl border border-border-subtle bg-surface text-text-muted hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-900/50 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-all cursor-pointer shadow-2xs"
+          >
+            <LockClosedIcon className="w-3.5 h-3.5" />
           </button>
         </div>
       </header>

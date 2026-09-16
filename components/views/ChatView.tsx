@@ -426,20 +426,20 @@ export function ChatView() {
     scope: ChatContextScope
   ): string => {
     const q = query.toLowerCase();
+    const curCode = settings.currency || "PHP";
+    const formatCurr = (val: number) =>
+      new Intl.NumberFormat(curCode === "PHP" ? "en-PH" : "en-US", {
+        style: "currency",
+        currency: curCode,
+      }).format(val);
 
     if (q.includes("runway") || q.includes("burn")) {
-      const burnFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(metrics.monthlyBurnRate);
+      const burnFormatted = formatCurr(metrics.monthlyBurnRate);
       const runwayStr =
         metrics.cashRunwayMonths >= 99 || !isFinite(metrics.cashRunwayMonths)
           ? "> 24 months"
           : `${metrics.cashRunwayMonths.toFixed(1)} months`;
-      const liquidCashFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(metrics.businessLiquidCash);
+      const liquidCashFormatted = formatCurr(metrics.businessLiquidCash);
 
       return `Based on your **${
         settings.businessName || "Business"
@@ -449,18 +449,9 @@ export function ChatView() {
       q.includes("wealth") ||
       q.includes("asset")
     ) {
-      const netWorthFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(metrics.netWorth);
-      const assetsFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(metrics.totalAssets);
-      const liabilitiesFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(metrics.totalLiabilities);
+      const netWorthFormatted = formatCurr(metrics.netWorth);
+      const assetsFormatted = formatCurr(metrics.totalAssets);
+      const liabilitiesFormatted = formatCurr(metrics.totalLiabilities);
 
       return `Here is your current **Personal Net Worth** position:\n\n• **Total Assets**: ${assetsFormatted}\n• **Total Liabilities**: ${liabilitiesFormatted}\n• **Net Worth (Assets - Liabilities)**: **${netWorthFormatted}**\n• **Monthly Savings Velocity**: ${Math.round(
         metrics.savingsRate
@@ -472,14 +463,8 @@ export function ChatView() {
       q.includes("receivable") ||
       q.includes("client")
     ) {
-      const arFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(metrics.outstandingReceivables);
-      const overdueFormatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(metrics.overdueReceivables);
+      const arFormatted = formatCurr(metrics.outstandingReceivables);
+      const overdueFormatted = formatCurr(metrics.overdueReceivables);
       const overdueCount = invoices.filter((i) => i.status === "overdue").length;
 
       return `**Accounts Receivable Status** for ${
@@ -728,10 +713,10 @@ Your financial workspace currently has:
             {/* Quick interactive expense prompt pills */}
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2 max-w-lg">
               {[
-                "Spent $45 on groceries at Whole Foods",
-                "Bought clothes at Zara $85",
-                "Paid electric bill $70",
-                "Figma team subscription $180",
+                "Spent ₱450 on groceries at Supermarket",
+                "Bought clothes at Zara ₱1,850",
+                "Paid electric bill ₱2,400",
+                "Figma team subscription ₱1,200",
               ].map((promptText, i) => (
                 <button
                   key={i}
@@ -909,9 +894,9 @@ Your financial workspace currently has:
 
                           <div className="text-right flex flex-col items-end">
                             <span className="font-mono font-extrabold text-sm text-rose-600 dark:text-rose-400 tabular-nums">
-                              {new Intl.NumberFormat("en-US", {
+                              {new Intl.NumberFormat("en-PH", {
                                 style: "currency",
-                                currency: "USD",
+                                currency: recordedTx.currency || settings.currency || "PHP",
                               }).format(recordedTx.amount)}
                             </span>
                             <button
@@ -1072,7 +1057,7 @@ Your financial workspace currently has:
             value={inputValue}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder="Type your expense here (e.g. 'Spent $45 on groceries', 'Bought clothes at Zara $85', 'Electric bill $70')..."
+            placeholder="Type your expense here (e.g. 'Spent ₱450 on groceries', 'Bought clothes at Zara ₱1,850', 'Electric bill ₱2,400')..."
             className="w-full bg-transparent px-3.5 py-2.5 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-[50px] max-h-[160px]"
           />
 
@@ -1246,7 +1231,7 @@ function formatInlineMarkers(text: string): React.ReactNode {
         </code>
       );
     }
-    if (part.startsWith("$")) {
+    if (part.startsWith("₱") || part.startsWith("$")) {
       return (
         <span key={i} className="font-mono tabular-nums font-semibold">
           {part}

@@ -17,6 +17,7 @@ import {
 import { ChatMessage } from "@/types/chat";
 import { getDemoDataset } from "@/data/demoData";
 import { resolveCategory } from "@/lib/categories";
+import { AUTHORIZED_USER, AUTH_STORAGE_KEY } from "@/lib/auth";
 
 export type NavigationTab =
   | "dashboard"
@@ -81,8 +82,8 @@ interface FinanceContextType {
 
   // Budget Actions
   addBudget: (category: string, monthlyLimit: number) => void;
-  updateBudget: (id: string, newLimit: number) => void;
-  deleteBudget: (id: string) => void;
+  updateBudget: (id: string, newLimit: number, newCategory?: string) => void;
+  deleteBudget: (id: string, category?: string) => void;
 
   // Anti-commingling action
   markReimbursed: (id: string) => void;
@@ -113,6 +114,17 @@ interface FinanceContextType {
     date?: string;
     note?: string;
   }) => { success: boolean; accountName: string; amount: number };
+
+  // Exclusive Authentication for Benedict Fusin
+  isAuthenticated: boolean;
+  isAuthChecking: boolean;
+  currentUser: { email: string; name: string; role?: string } | null;
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -129,6 +141,8 @@ const STORAGE_KEYS = {
   DARK_MODE: "chipr_dark_mode_v2",
   PRIVACY: "chipr_privacy_mask_v2",
   CHAT_MESSAGES: "chipr_chat_messages_v1",
+  DISMISSED_BUDGETS: "chipr_dismissed_budgets_v2",
+  AUTH: AUTH_STORAGE_KEY,
 };
 
 const DEFAULT_BUDGET_ENVELOPES: BudgetEnvelope[] = [];
@@ -163,7 +177,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     role: "",
     businessType: "Sole Proprietorship",
     taxIdMasked: "",
-    currency: "USD",
+    currency: "PHP",
     fiscalYearStart: "January",
     defaultWorkspace: "personal",
     defaultPrivacyMask: false,
@@ -174,6 +188,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [rawBudgets, setRawBudgets] = useState<BudgetEnvelope[]>([]);
+  const [dismissedBudgetCategories, setDismissedBudgetCategories] = useState<string[]>([]);
   const [vendorBills, setVendorBills] = useState<VendorBill[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -181,6 +196,15 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // Add Credit modal states
   const [isAddCreditModalOpen, setIsAddCreditModalOpen] = useState<boolean>(false);
   const [addCreditTargetAccount, setAddCreditTargetAccount] = useState<FinancialAccount | null>(null);
+
+  // Exclusive authentication states (Benedict Fusin)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
+  const [currentUser, setCurrentUser] = useState<{
+    email: string;
+    name: string;
+    role?: string;
+  } | null>(null);
 
   // Dynamically compute budget envelopes and live spent amounts from transactions
   const budgets: BudgetEnvelope[] = useMemo(() => {
@@ -220,8 +244,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       };
     });
 
+    const dismissedSet = new Set(
+      dismissedBudgetCategories.map((c) => c.toLowerCase().trim())
+    );
+
     // 3. Automatically include any personal category that has recorded spending
-    // so user's spent money immediately shows up in the Budget tab even without manually establishing a ceiling!
+    // unless the user explicitly deleted / dismissed that envelope
     for (const [catKey, { spent, properName }] of spentByCategory.entries()) {
       let isCovered = userEnvelopeCategories.has(catKey);
       if (!isCovered) {
@@ -232,7 +260,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
-      if (!isCovered && spent > 0) {
+      if (!isCovered && !dismissedSet.has(catKey) && spent > 0) {
         list.push({
           id: `b-auto-${catKey.replace(/[^a-z0-9]/g, "-")}`,
           category: properName,
@@ -244,7 +272,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
 
     return list;
-  }, [rawBudgets, transactions]);
+  }, [rawBudgets, transactions, dismissedBudgetCategories]);
 
   // Hydrate from localStorage and SQLite database on mount
   useEffect(() => {
@@ -263,8 +291,24 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         const storedDark = localStorage.getItem(STORAGE_KEYS.DARK_MODE);
         const storedPrivacy = localStorage.getItem(STORAGE_KEYS.PRIVACY);
 
-        if (storedAccounts) setAccounts(JSON.parse(storedAccounts));
-        if (storedTxs) setTransactions(JSON.parse(storedTxs));
+        if (storedAccounts) {
+          const parsed = JSON.parse(storedAccounts);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((a: FinancialAccount) => {
+              if (a.currency === "USD" || !a.currency) a.currency = "PHP";
+            });
+            setAccounts(parsed);
+          }
+        }
+        if (storedTxs) {
+          const parsed = JSON.parse(storedTxs);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((t: Transaction) => {
+              if (t.currency === "USD" || !t.currency) t.currency = "PHP";
+            });
+            setTransactions(parsed);
+          }
+        }
         if (storedInvoices) setInvoices(JSON.parse(storedInvoices));
         if (storedBudgets) {
           try {
@@ -272,10 +316,23 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             if (Array.isArray(parsed) && parsed.length > 0) setRawBudgets(parsed);
           } catch {}
         }
+        const storedDismissed = localStorage.getItem(STORAGE_KEYS.DISMISSED_BUDGETS);
+        if (storedDismissed) {
+          try {
+            const parsed = JSON.parse(storedDismissed);
+            if (Array.isArray(parsed)) setDismissedBudgetCategories(parsed);
+          } catch {}
+        }
         if (storedVendorBills) setVendorBills(JSON.parse(storedVendorBills));
         if (storedSubs) setSubscriptions(JSON.parse(storedSubs));
         if (storedChat) setChatMessages(JSON.parse(storedChat));
-        if (storedSettings) setSettings(JSON.parse(storedSettings));
+        if (storedSettings) {
+          const parsed = JSON.parse(storedSettings);
+          if (!parsed.currency || parsed.currency === "USD") {
+            parsed.currency = "PHP";
+          }
+          setSettings(parsed);
+        }
         if (storedWs) {
           if (storedWs === "business") {
             setWorkspaceState("business");
@@ -289,12 +346,51 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           if (isDark) document.documentElement.classList.add("dark");
         }
         if (storedPrivacy) setPrivacyMaskState(JSON.parse(storedPrivacy));
+        const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
+        if (storedAuth) {
+          try {
+            const parsedAuth = JSON.parse(storedAuth);
+            if (
+              parsedAuth &&
+              parsedAuth.email &&
+              parsedAuth.email.toLowerCase() === AUTHORIZED_USER.email.toLowerCase()
+            ) {
+              setIsAuthenticated(true);
+              setCurrentUser(parsedAuth);
+            }
+          } catch {}
+        }
       } catch {
         // Ignore storage read errors
       } finally {
         setIsHydrated(true);
       }
     }, 0);
+
+    // Verify session with authentication API
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.authenticated && data.user) {
+          setIsAuthenticated(true);
+          setCurrentUser(data.user);
+          try {
+            localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(data.user));
+          } catch {}
+        } else {
+          const localAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
+          if (!localAuth) {
+            setIsAuthenticated(false);
+            setCurrentUser(null);
+          }
+        }
+      })
+      .catch(() => {
+        // Network fallback
+      })
+      .finally(() => {
+        setIsAuthChecking(false);
+      });
 
     // Hydrate directly from SQLite database API (canonical authority)
     fetch("/api/data")
@@ -549,7 +645,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     // Resolve category using comprehensive financial taxonomy
     const finalCategory = resolveCategory(tx.category, tx.merchant, tx.entity);
 
-    const txCurrency = tx.currency || (settings.currency === "PHP" ? "PHP" : "USD");
+    const txCurrency = tx.currency || settings.currency || "PHP";
 
     const newTx: Transaction = {
       ...tx,
@@ -560,8 +656,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
     setTransactions((prev) => [newTx, ...prev]);
 
-    // If user spent in PHP, update settings currency if currently default USD
-    if (txCurrency === "PHP" && settings.currency === "USD") {
+    // Ensure settings currency is PHP if currently USD
+    if (settings.currency === "USD") {
       setSettings((prev) => ({ ...prev, currency: "PHP" }));
     }
 
@@ -700,6 +796,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------
   const addBudget = (category: string, monthlyLimit: number) => {
     const cleanCategory = category.trim();
+    const catKey = cleanCategory.toLowerCase().trim();
+
+    // Remove from dismissed categories if previously dismissed
+    setDismissedBudgetCategories((prev) => {
+      const updated = prev.filter((c) => c !== catKey);
+      try {
+        localStorage.setItem(STORAGE_KEYS.DISMISSED_BUDGETS, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
     const budgetId = `b-${cleanCategory.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now()}`;
     const newBudget: BudgetEnvelope = {
       id: budgetId,
@@ -722,22 +829,115 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }).catch((err) => console.warn("Failed to persist budget:", err));
   };
 
-  const updateBudget = (id: string, newLimit: number) => {
-    setRawBudgets((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, monthlyLimit: newLimit } : b))
-    );
+  const updateBudget = (id: string, newLimit: number, newCategory?: string) => {
+    const cleanNewCat = newCategory?.trim();
+    const catKey = cleanNewCat ? cleanNewCat.toLowerCase().trim() : undefined;
 
-    fetch("/api/budgets", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, monthlyLimit: newLimit }),
-    }).catch((err) => console.warn("Failed to update budget:", err));
+    if (catKey) {
+      setDismissedBudgetCategories((prev) => {
+        const updated = prev.filter((c) => c !== catKey);
+        try {
+          localStorage.setItem(STORAGE_KEYS.DISMISSED_BUDGETS, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    }
+
+    setRawBudgets((prev) => {
+      const existing = prev.find((b) => b.id === id);
+      if (existing) {
+        return prev.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                monthlyLimit: newLimit,
+                category: cleanNewCat || b.category,
+              }
+            : b
+        );
+      }
+
+      // If budget is an auto-budget (b-auto-...) or not found in rawBudgets, promote to an explicit envelope:
+      const categoryName =
+        cleanNewCat ||
+        (id.startsWith("b-auto-")
+          ? resolveCategory(
+              id.replace(/^b-auto-/, "").replace(/-/g, " "),
+              undefined,
+              "personal"
+            )
+          : "Custom Envelope");
+
+      const newId = `b-${categoryName.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now()}`;
+      const newEnvelope: BudgetEnvelope = {
+        id: newId,
+        category: categoryName,
+        monthlyLimit: newLimit,
+        spent: 0,
+        entity: "personal",
+      };
+
+      // Persist to SQLite
+      fetch("/api/budgets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: categoryName,
+          monthlyLimit: newLimit,
+          id: newId,
+        }),
+      }).catch((err) => console.warn("Failed to persist budget:", err));
+
+      return [...prev, newEnvelope];
+    });
+
+    if (!id.startsWith("b-auto-")) {
+      fetch("/api/budgets", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, monthlyLimit: newLimit, category: cleanNewCat }),
+      }).catch((err) => console.warn("Failed to update budget:", err));
+    }
   };
 
-  const deleteBudget = (id: string) => {
-    setRawBudgets((prev) => prev.filter((b) => b.id !== id));
+  const deleteBudget = (id: string, category?: string) => {
+    // Find target category
+    const target = rawBudgets.find((b) => b.id === id);
+    const catName =
+      category ||
+      target?.category ||
+      (id.startsWith("b-auto-")
+        ? id.replace(/^b-auto-/, "").replace(/-/g, " ")
+        : "");
+    const cleanCat = catName.toLowerCase().trim();
 
-    fetch(`/api/budgets?id=${encodeURIComponent(id)}`, {
+    // 1. Remove from rawBudgets
+    setRawBudgets((prev) =>
+      prev.filter(
+        (b) => b.id !== id && (!cleanCat || b.category.toLowerCase().trim() !== cleanCat)
+      )
+    );
+
+    // 2. Add to dismissed categories so step 3 does not resurrect it
+    if (cleanCat) {
+      setDismissedBudgetCategories((prev) => {
+        if (prev.includes(cleanCat)) return prev;
+        const updated = [...prev, cleanCat];
+        try {
+          localStorage.setItem(
+            STORAGE_KEYS.DISMISSED_BUDGETS,
+            JSON.stringify(updated)
+          );
+        } catch {}
+        return updated;
+      });
+    }
+
+    // 3. Persist deletion to SQLite database
+    const deleteUrl = `/api/budgets?id=${encodeURIComponent(id)}${
+      cleanCat ? `&category=${encodeURIComponent(cleanCat)}` : ""
+    }`;
+    fetch(deleteUrl, {
       method: "DELETE",
     }).catch((err) => console.warn("Failed to delete budget:", err));
   };
@@ -775,11 +975,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       role: "Managing Principal & Owner",
       businessType: "LLC",
       taxIdMasked: "XX-XXX8942",
-      currency: "USD",
+      currency: "PHP",
       fiscalYearStart: "January",
       defaultWorkspace: "personal",
       defaultPrivacyMask: false,
     });
+    setDismissedBudgetCategories([]);
+    localStorage.removeItem(STORAGE_KEYS.DISMISSED_BUDGETS);
   };
 
   // -------------------------------------------------------------
@@ -811,6 +1013,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setTransactions([]);
     setInvoices([]);
     setRawBudgets([]);
+    setDismissedBudgetCategories([]);
     setVendorBills([]);
     setSubscriptions([]);
     setChatMessages([]);
@@ -822,7 +1025,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       role: "",
       businessType: "Sole Proprietorship",
       taxIdMasked: "",
-      currency: "USD",
+      currency: "PHP",
       fiscalYearStart: "January",
       defaultWorkspace: "personal",
       defaultPrivacyMask: false,
@@ -831,6 +1034,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
     localStorage.removeItem(STORAGE_KEYS.INVOICES);
     localStorage.removeItem(STORAGE_KEYS.BUDGETS);
+    localStorage.removeItem(STORAGE_KEYS.DISMISSED_BUDGETS);
     localStorage.removeItem(STORAGE_KEYS.VENDOR_BILLS);
     localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTIONS);
     localStorage.removeItem(STORAGE_KEYS.CHAT_MESSAGES);
@@ -932,7 +1136,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         balance: 0,
         institution: "Primary Ledger",
         accountNumberMasked: "•••• 1001",
-        currency: settings.currency || "USD",
+        currency: settings.currency || "PHP",
       };
       setAccounts((prev) => [...prev, newAcc]);
       targetAccountId = defaultId;
@@ -961,9 +1165,64 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe = true
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, rememberMe }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "ok") {
+        setIsAuthenticated(true);
+        setCurrentUser(data.user);
+        if (rememberMe) {
+          try {
+            localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(data.user));
+          } catch {}
+        }
+        setSettings((prev) => ({
+          ...prev,
+          personalName: prev.personalName || data.user.name,
+          email: prev.email || data.user.email,
+        }));
+        return { success: true };
+      }
+      return {
+        success: false,
+        error: data.error || "Invalid credentials for exclusive access.",
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Failed to connect to authentication service.",
+      };
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    try {
+      localStorage.removeItem(STORAGE_KEYS.AUTH);
+    } catch {}
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+  };
+
   return (
     <FinanceContext.Provider
       value={{
+        isAuthenticated,
+        isAuthChecking,
+        currentUser,
+        login,
+        logout,
         workspace,
         setWorkspace,
         privacyMask,

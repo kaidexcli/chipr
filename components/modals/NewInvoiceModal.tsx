@@ -278,7 +278,7 @@ export function NewInvoiceModal({ isOpen, onClose }: NewInvoiceModalProps) {
                       />
                     </div>
                     <div className="w-16 sm:w-20 text-right font-mono text-xs font-semibold text-text-primary">
-                      ${(item.quantity * item.unitPrice).toFixed(2)}
+                      ₱{(item.quantity * item.unitPrice).toFixed(2)}
                     </div>
                     {lineItems.length > 1 && (
                       <button
@@ -301,17 +301,17 @@ export function NewInvoiceModal({ isOpen, onClose }: NewInvoiceModalProps) {
                 <div className="flex justify-between text-text-secondary">
                   <span>Subtotal:</span>
                   <span className="font-mono tabular-nums">
-                    ${subtotal.toFixed(2)}
+                    ₱{subtotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-text-secondary">
                   <span>Tax (0%):</span>
-                  <span className="font-mono tabular-nums">$0.00</span>
+                  <span className="font-mono tabular-nums">₱0.00</span>
                 </div>
                 <div className="flex justify-between border-t border-border-subtle pt-1 font-bold text-text-primary text-sm">
                   <span>Total Due:</span>
                   <span className="font-mono tabular-nums text-brand">
-                    ${subtotal.toFixed(2)}
+                    ₱{subtotal.toFixed(2)}
                   </span>
                 </div>
               </div>

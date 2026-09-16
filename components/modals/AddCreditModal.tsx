@@ -142,7 +142,7 @@ export function AddCreditModal() {
       });
 
       setSuccessMessage(
-        `Successfully added ${settings.currency === "PHP" ? "₱" : "$"}${parsedAmount.toLocaleString(undefined, {
+        `Successfully added ₱${parsedAmount.toLocaleString(undefined, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })} credit to ${result.accountName}!`
@@ -171,7 +171,7 @@ export function AddCreditModal() {
       balance: parsedBalance,
       institution: newCardInstitution.trim() || "Financial Institution",
       accountNumberMasked: newCardMask.trim() || "•••• 4821",
-      currency: settings.currency || "USD",
+      currency: settings.currency || "PHP",
     });
 
     setSuccessMessage(`Added new ${newCardType === "credit" ? "credit card" : "credit account"} "${newCardName}"!`);
@@ -346,12 +346,12 @@ export function AddCreditModal() {
             {/* Credit Amount Input */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-text-secondary">
-                Credit Amount ({settings.currency || "USD"})
+                Credit Amount ({settings.currency || "PHP"})
               </label>
 
               <div className="relative flex items-center">
                 <span className="absolute left-3.5 font-mono text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 select-none">
-                  +{settings.currency === "PHP" ? "₱" : "$"}
+                  +₱
                 </span>
                 <input
                   type="number"
@@ -388,7 +388,7 @@ export function AddCreditModal() {
                   type="button"
                   onClick={() => handleAddPresetIncrement(100)}
                   className="rounded-lg px-2 py-1 text-[11px] font-mono text-text-muted hover:text-text-primary hover:bg-raised transition-colors cursor-pointer border border-dashed border-border-subtle"
-                  title="Add $100 to current amount"
+                  title="Add ₱100 to current amount"
                 >
                   +100
                 </button>
@@ -480,7 +480,7 @@ export function AddCreditModal() {
                 <span>
                   {isSubmitting
                     ? "Crediting Account..."
-                    : `Credit +${settings.currency === "PHP" ? "₱" : "$"}${parseFloat(amount || "0").toLocaleString(
+                    : `Credit +₱${parseFloat(amount || "0").toLocaleString(
                         undefined,
                         { minimumFractionDigits: 2, maximumFractionDigits: 2 }
                       )}`}
@@ -573,7 +573,7 @@ export function AddCreditModal() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-text-secondary mb-1">
-                  Current Balance Due ({settings.currency || "USD"})
+                  Current Balance Due ({settings.currency || "PHP"})
                 </label>
                 <input
                   type="number"

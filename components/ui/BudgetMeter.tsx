@@ -19,7 +19,7 @@ export function BudgetMeter({
   category,
   spent,
   budget,
-  currency = "USD",
+  currency = "PHP",
   privacyMask = false,
   onEdit,
   onDelete,
@@ -102,11 +102,14 @@ export function BudgetMeter({
                   80% limit threshold
                 </span>
               ) : (
-                <span className="text-text-muted">
-                  {new Intl.NumberFormat("en-US", { style: "currency", currency }).format(
-                    budget - spent
-                  )}{" "}
-                  remaining
+                <span className="text-text-muted flex items-center gap-1">
+                  <MoneyAmount
+                    amount={budget - spent}
+                    currency={currency}
+                    size="xs"
+                    privacyMask={privacyMask}
+                  />
+                  <span>remaining</span>
                 </span>
               )}
             </>

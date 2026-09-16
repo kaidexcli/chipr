@@ -16,6 +16,8 @@ import {
   CheckIcon,
   ChevronLeftIcon,
   XMarkIcon,
+  LockClosedIcon,
+  LogoutIcon,
 } from "@/components/ui/Icons";
 
 export function ProfileView() {
@@ -33,6 +35,8 @@ export function ProfileView() {
     metrics,
     clearAllData,
     setActiveTab,
+    logout,
+    currentUser,
   } = useFinance();
 
   // Local form state
@@ -44,7 +48,7 @@ export function ProfileView() {
   const [businessName, setBusinessName] = useState(settings.businessName || "");
   const [businessType, setBusinessType] = useState(settings.businessType || "Sole Proprietorship");
   const [taxIdMasked, setTaxIdMasked] = useState(settings.taxIdMasked || "");
-  const [currency, setCurrency] = useState(settings.currency || "USD");
+  const [currency, setCurrency] = useState(settings.currency || "PHP");
   const [fiscalYearStart, setFiscalYearStart] = useState(settings.fiscalYearStart || "January");
 
   const [defaultWorkspace, setDefaultWorkspace] = useState<WorkspaceEntity>(
@@ -66,7 +70,7 @@ export function ProfileView() {
     setBusinessName(settings.businessName || "");
     setBusinessType(settings.businessType || "Sole Proprietorship");
     setTaxIdMasked(settings.taxIdMasked || "");
-    setCurrency(settings.currency || "USD");
+    setCurrency(settings.currency || "PHP");
     setFiscalYearStart(settings.fiscalYearStart || "January");
     setDefaultWorkspace(settings.defaultWorkspace || "personal");
     setDefaultPrivacyMask(settings.defaultPrivacyMask || false);
@@ -434,8 +438,8 @@ export function ProfileView() {
                 onChange={(e) => setCurrency(e.target.value)}
                 className="w-full rounded-xl border border-border-subtle bg-canvas px-3.5 py-2 text-xs text-text-primary focus:border-brand focus:outline-none"
               >
-                <option value="USD">USD ($) — United States Dollar</option>
                 <option value="PHP">PHP (₱) — Philippine Peso</option>
+                <option value="USD">USD ($) — United States Dollar</option>
                 <option value="EUR">EUR (€) — Euro</option>
                 <option value="GBP">GBP (£) — British Pound</option>
                 <option value="CAD">CAD ($) — Canadian Dollar</option>
@@ -483,7 +487,7 @@ export function ProfileView() {
                 Default Privacy Shield
               </label>
               <div className="flex items-center justify-between p-2 rounded-xl border border-border-subtle bg-canvas">
-                <span className="text-xs text-text-secondary">Mask balances on launch ($••••••)</span>
+                <span className="text-xs text-text-secondary">Mask balances on launch (₱••••••)</span>
                 <button
                   type="button"
                   onClick={() => setDefaultPrivacyMask(!defaultPrivacyMask)}
@@ -518,7 +522,7 @@ export function ProfileView() {
               className="inline-flex items-center gap-2 rounded-xl border border-border-subtle bg-canvas px-3.5 py-2 text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-raised transition-colors cursor-pointer"
             >
               {privacyMask ? <EyeSlashIcon className="w-3.5 h-3.5 text-amber-500" /> : <EyeIcon className="w-3.5 h-3.5" />}
-              <span>Live Mask: {privacyMask ? "Active ($••••••)" : "Revealed"}</span>
+              <span>Live Mask: {privacyMask ? "Active (₱••••••)" : "Revealed"}</span>
             </button>
           </div>
         </div>
@@ -556,6 +560,53 @@ export function ProfileView() {
             >
               <TrashIcon className="w-3.5 h-3.5" />
               <span>Clear All Data</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Section 5: Exclusive Owner Account & Device Security */}
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                <LockClosedIcon className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-text-primary">
+                  Owner Account & Multi-Device Access
+                </h3>
+                <p className="text-xs text-text-muted">
+                  Exclusive private access configured for Benedict Fusin
+                </p>
+              </div>
+            </div>
+
+            <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+              Active Session
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold text-text-primary">
+                {currentUser?.name || "Benedict Fusin"} ({currentUser?.email || "benedictfusin99@gmail.com"})
+              </p>
+              <p className="text-[11px] text-text-muted">
+                Predefined credentials allow uninterrupted synchronized access across all your phones, tablets, and computers.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("Lock workspace and sign out of Chipr?")) {
+                  logout();
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/20 px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shrink-0"
+            >
+              <LogoutIcon className="w-3.5 h-3.5" />
+              <span>Lock & Sign Out</span>
             </button>
           </div>
         </div>

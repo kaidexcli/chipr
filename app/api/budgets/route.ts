@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, monthlyLimit } = body;
+    const { id, monthlyLimit, category } = body;
 
     if (!id || typeof monthlyLimit !== "number") {
       return NextResponse.json(
@@ -74,7 +74,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const updated = updateDbBudget(id, monthlyLimit);
+    const updated = updateDbBudget(id, monthlyLimit, category);
     if (!updated) {
       return NextResponse.json(
         { error: "Budget envelope not found" },
@@ -86,6 +86,7 @@ export async function PUT(req: NextRequest) {
       status: "ok",
       id,
       monthlyLimit,
+      category,
     });
   } catch (error: unknown) {
     const err = error as { message?: string };
@@ -97,13 +98,14 @@ export async function PUT(req: NextRequest) {
 }
 
 /**
- * DELETE /api/budgets?id=...
+ * DELETE /api/budgets?id=...&category=...
  * Deletes a budget envelope from SQLite database.
  */
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const category = searchParams.get("category") || undefined;
 
     if (!id) {
       return NextResponse.json(
@@ -112,7 +114,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const deleted = deleteDbBudget(id);
+    const deleted = deleteDbBudget(id, category);
     return NextResponse.json({
       status: "ok",
       deleted,

@@ -56,7 +56,7 @@ export function RecordCard({
     reimbursementStatus = "none",
     isOwnerDraw = false,
     accountName,
-    currency = "USD",
+    currency = "PHP",
     note,
   } = transaction;
 

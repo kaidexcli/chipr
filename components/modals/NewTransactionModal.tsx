@@ -243,7 +243,7 @@ export function NewTransactionModal({
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Amount ($ USD)
+                Amount (₱ PHP)
               </label>
               <input
                 type="number"

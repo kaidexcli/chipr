@@ -14,7 +14,7 @@ export function RunwayCard({
   monthlyBurnRate,
   cashRunwayMonths,
   liquidReserves,
-  currency = "USD",
+  currency = "PHP",
   privacyMask = false,
   className = "",
 }: RunwayCardProps) {

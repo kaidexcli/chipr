@@ -15,7 +15,7 @@ export function PnLSummaryCard({
   grossRevenue,
   cogs,
   operatingExpenses,
-  currency = "USD",
+  currency = "PHP",
   privacyMask = false,
   periodLabel,
   className = "",

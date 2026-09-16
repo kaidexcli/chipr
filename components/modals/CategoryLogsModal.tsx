@@ -70,7 +70,7 @@ export function CategoryLogsModal({
   const effectiveCurrency =
     categoryTransactions.find((t) => t.currency)?.currency ||
     settings.currency ||
-    "USD";
+    "PHP";
 
   if (!isOpen) return null;
 

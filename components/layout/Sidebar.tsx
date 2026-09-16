@@ -31,6 +31,8 @@ import {
   LogoMark,
   SparklesIcon,
   CreditPlusIcon,
+  LockClosedIcon,
+  LogoutIcon,
 } from "@/components/ui/Icons";
 
 interface NavItem {
@@ -84,6 +86,7 @@ function SidebarBody({
     toggleDarkMode,
     settings,
     openAddCreditModal,
+    logout,
   } = useFinance();
 
   const pendingReimbursementsCount = transactions.filter(
@@ -478,12 +481,12 @@ function SidebarBody({
                 ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300"
                 : "text-text-muted hover:bg-raised hover:text-text-primary"
             }`}
-            title={privacyMask ? "Reveal balances" : "Hide balances ($••••••)"}
+            title={privacyMask ? "Reveal balances" : "Hide balances (₱••••••)"}
           >
             {privacyMask ? (
               <>
                 <EyeSlashIcon className="w-3.5 h-3.5 text-amber-500" />
-                <span className="font-mono text-[10px]">$••••••</span>
+                <span className="font-mono text-[10px]">₱••••••</span>
               </>
             ) : (
               <>
@@ -511,6 +514,21 @@ function SidebarBody({
                 <span className="text-[10px]">Dark</span>
               </>
             )}
+          </button>
+
+          {/* Lock Workspace & Sign Out */}
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Lock workspace and sign out of Chipr?")) {
+                logout();
+              }
+            }}
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-text-muted hover:text-rose-600 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+            title="Lock workspace and sign out"
+          >
+            <LockClosedIcon className="w-3.5 h-3.5" />
+            <span className="text-[10px]">Lock</span>
           </button>
         </div>
       </div>

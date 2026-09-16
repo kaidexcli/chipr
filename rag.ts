@@ -22,12 +22,12 @@ export interface PromptContextParams {
 }
 
 /**
- * Format numbers as standard USD currency
+ * Format numbers as standard Philippine Peso (PHP) currency
  */
-export function formatMoney(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatMoney(amount: number, currency = "PHP"): string {
+  return new Intl.NumberFormat(currency === "PHP" ? "en-PH" : "en-US", {
     style: "currency",
-    currency: "USD",
+    currency: currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
@@ -75,10 +75,10 @@ export function extractTransactionFromAiResponse(
       }
       if (!detectedCurrency) {
         const lowerRaw = (content + " " + rawJson).toLowerCase();
-        if (lowerRaw.includes("peso") || lowerRaw.includes("php") || lowerRaw.includes("₱")) {
-          detectedCurrency = "PHP";
-        } else {
+        if (lowerRaw.includes("dollar") || lowerRaw.includes("usd") || lowerRaw.includes("$")) {
           detectedCurrency = "USD";
+        } else {
+          detectedCurrency = "PHP";
         }
       }
 
@@ -440,12 +440,12 @@ PRIMARY IDENTITY & USER CONTEXT:
   })
 
 CORE DIRECTIVE 1: EXPENSE CHAT & AUTOMATIC CATEGORIZATION
-The primary purpose of this AI chat is for the user to chat their expenses, purchases, or bills (e.g., "Spent 250 pesos on jollibee", "Spent $45 on groceries at Whole Foods", "Bought jacket at Zara $85", "Electric bill $70", "Bought Figma annual $180").
+The primary purpose of this AI chat is for the user to chat their expenses, purchases, or bills (e.g., "Spent 250 pesos on jollibee", "Spent ₱450 on groceries at Supermarket", "Bought jacket at Zara ₱1,850", "Electric bill ₱2,400", "Bought Figma annual ₱1,200").
 Whenever the user communicates an expense or purchase:
 1. Parse the details:
    - Merchant (store, provider, or vendor name)
    - Amount (numerical value)
-   - Currency: Detect currency from the user's input (e.g. "pesos", "peso", "PHP", "₱" -> "PHP"; "$", "dollars", "USD" -> "USD")
+   - Currency: Default currency is Philippine Peso ("PHP" / "₱"). Detect currency from input, defaulting to "PHP".
    - Date (default to ${todayStr} unless specified)
    - Context (food/dining/fast food, clothing/apparel, other personal, or business software/services)
 2. Map it to the EXACT corresponding category name from the AUTHORIZED DATABASE CATEGORIES below:
@@ -473,7 +473,7 @@ Whenever the user communicates an expense or purchase:
    - Business expenses map to IRS Schedule C categories and deductible percentage (e.g., Software 100%, Meals 50%).
 4. In your message response:
    - Confirm the recorded purchase cleanly with bullet points:
-     • **Merchant & Amount**: Verified purchase amount formatted in the user's currency (e.g. **-₱250.00** for PHP/pesos, or **-$45.00** for USD)
+     • **Merchant & Amount**: Verified purchase amount formatted in the user's currency (e.g. **-₱250.00** for PHP/pesos)
      • **Assigned Category**: State the exact category and explain why it fits (e.g. "Food & Dining")
      • **Financial & Tax Impact**: If personal, note the budget category impact (e.g. allocated to your Food & Dining envelope); if business, mention the Schedule C write-off
 5. AT THE VERY END OF YOUR RESPONSE, append an exact JSON block in a \`\`\`json:transaction\`\`\` code block:
@@ -509,7 +509,7 @@ ${invoicesText}
 ${transactionsText}
 
 COMMUNICATION STYLE:
-- Always format currency amounts with the appropriate currency sign (e.g. **-₱250.00** for pesos/PHP, **-$45.00** for dollars/USD).
+- Always format currency amounts with the Philippine Peso sign (e.g. **-₱250.00** for pesos/PHP).
 - Keep responses concise, direct, helpful, and analytical.
 - When an expense is mentioned, ALWAYS include the \`\`\`json:transaction\`\`\` block at the end so the app automatically logs it into the SQLite database.`;
 }

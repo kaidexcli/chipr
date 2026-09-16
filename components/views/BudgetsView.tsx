@@ -7,7 +7,7 @@ import { MoneyAmount } from "@/components/ui/MoneyAmount";
 import { NewBudgetModal } from "@/components/modals/NewBudgetModal";
 import { CategoryLogsModal } from "@/components/modals/CategoryLogsModal";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { BudgetIcon, PlusIcon, SparklesIcon } from "@/components/ui/Icons";
+import { BudgetIcon, PlusIcon, SparklesIcon, EditIcon } from "@/components/ui/Icons";
 import { getPersonalCategories } from "@/lib/categories";
 
 export function BudgetsView() {
@@ -41,7 +41,7 @@ export function BudgetsView() {
   const effectiveCurrency =
     settings.currency ||
     transactions.find((t) => t.currency)?.currency ||
-    "USD";
+    "PHP";
 
   const totalMonthlyBudget = budgets.reduce((sum, b) => sum + b.monthlyLimit, 0);
   const totalMonthlySpent = budgets.reduce((sum, b) => sum + b.spent, 0);
@@ -263,15 +263,11 @@ export function BudgetsView() {
                   promptCount={pCount}
                   onViewLogs={() => handleOpenLogs(b.category)}
                   onEdit={() => handleOpenEdit(b)}
-                  onDelete={
-                    b.id.startsWith("b-auto-")
-                      ? undefined
-                      : () => {
-                          if (confirm(`Delete budget envelope "${b.category}"?`)) {
-                            deleteBudget(b.id);
-                          }
-                        }
-                  }
+                  onDelete={() => {
+                    if (confirm(`Delete budget envelope "${b.category}"?`)) {
+                      deleteBudget(b.id, b.category);
+                    }
+                  }}
                 />
               );
             })}
@@ -322,9 +318,10 @@ export function BudgetsView() {
                   (t.createdVia === "ai_chat" ||
                     (t.note && t.note.toLowerCase().includes("prompt:")))
               ).length;
-            const hasActiveEnvelope = budgets.some(
-              (b) => b.category.toLowerCase() === catKey && b.monthlyLimit > 0
+            const activeEnvelope = budgets.find(
+              (b) => b.category.toLowerCase() === catKey
             );
+            const hasActiveEnvelope = !!activeEnvelope && activeEnvelope.monthlyLimit > 0;
 
             return (
               <div
@@ -374,7 +371,16 @@ export function BudgetsView() {
                       )}
                     </button>
 
-                    {!hasActiveEnvelope && (
+                    {activeEnvelope ? (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(activeEnvelope)}
+                        className="rounded-lg p-1 text-text-muted hover:text-text-primary hover:bg-raised transition-colors cursor-pointer text-[11px]"
+                        title="Edit Envelope Limit"
+                      >
+                        <EditIcon className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => handleOpenNew(cat.name)}

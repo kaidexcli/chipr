@@ -295,7 +295,7 @@ export function CommandPalette({
                 ) : (
                   <EyeSlashIcon className="w-3.5 h-3.5 text-text-secondary" />
                 )}
-                <span>{privacyMask ? "Reveal Balances" : "Privacy Mask ($••••••)"}</span>
+                <span>{privacyMask ? "Reveal Balances" : "Privacy Mask (₱••••••)"}</span>
               </button>
               <button
                 type="button"
@@ -393,7 +393,7 @@ export function CommandPalette({
                       <p className="text-[10px] text-text-muted">{t.category} • {t.date}</p>
                     </div>
                     <span className="font-mono font-semibold">
-                      {t.amount >= 0 ? "+" : "-"}${Math.abs(t.amount).toFixed(2)}
+                      {t.amount >= 0 ? "+" : "-"}₱{Math.abs(t.amount).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -410,7 +410,7 @@ export function CommandPalette({
                       <p className="font-semibold text-text-primary">{inv.clientName}</p>
                       <p className="text-[10px] text-text-muted">{inv.invoiceNumber} • {inv.status}</p>
                     </div>
-                    <span className="font-mono font-semibold">${inv.total.toFixed(2)}</span>
+                    <span className="font-mono font-semibold">₱{inv.total.toFixed(2)}</span>
                   </div>
                 ))}
               </div>

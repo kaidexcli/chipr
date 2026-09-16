@@ -13,6 +13,7 @@ import { ProfileView } from "@/components/views/ProfileView";
 import { ChatView } from "@/components/views/ChatView";
 import { AddCreditModal } from "@/components/modals/AddCreditModal";
 import { BrandLoadingScreen } from "@/components/ui/BrandLoadingScreen";
+import { LoginScreen } from "@/components/auth/LoginScreen";
 import {
   DashboardIcon,
   TransactionIcon,
@@ -181,6 +182,29 @@ function MainContent() {
   );
 }
 
+function AppRouter({ isSplashDone }: { isSplashDone: boolean }) {
+  const { isAuthenticated, isAuthChecking } = useFinance();
+
+  // Keep screen clean while splash screen runs
+  if (!isSplashDone) {
+    return null;
+  }
+
+  // If not authenticated and checking is complete, show the exclusive Login Screen
+  if (!isAuthenticated && !isAuthChecking) {
+    return <LoginScreen />;
+  }
+
+  // Smooth fallback while checking local/session auth state
+  if (isAuthChecking && !isAuthenticated) {
+    return (
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-canvas" />
+    );
+  }
+
+  return <MainContent />;
+}
+
 export default function Home() {
   const [showSplash, setShowSplash] = React.useState(true);
 
@@ -192,7 +216,7 @@ export default function Home() {
           onComplete={() => setShowSplash(false)}
         />
       )}
-      <MainContent />
+      <AppRouter isSplashDone={!showSplash} />
     </FinanceProvider>
   );
 }

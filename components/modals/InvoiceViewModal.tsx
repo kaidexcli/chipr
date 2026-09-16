@@ -138,10 +138,10 @@ export function InvoiceViewModal({ isOpen, onClose, invoice }: InvoiceViewModalP
                       {item.quantity}
                     </td>
                     <td className="py-3 text-right font-mono text-text-secondary">
-                      ${item.unitPrice.toFixed(2)}
+                      ₱{item.unitPrice.toFixed(2)}
                     </td>
                     <td className="py-3 text-right font-mono font-semibold text-text-primary">
-                      ${item.amount.toFixed(2)}
+                      ₱{item.amount.toFixed(2)}
                     </td>
                   </tr>
                 ))}
@@ -160,7 +160,7 @@ export function InvoiceViewModal({ isOpen, onClose, invoice }: InvoiceViewModalP
               </div>
               <div className="flex justify-between text-text-secondary">
                 <span>Tax</span>
-                <span className="font-mono tabular-nums">$0.00</span>
+                <span className="font-mono tabular-nums">₱0.00</span>
               </div>
               <div className="flex justify-between border-t border-border-strong pt-2 text-base font-bold text-text-primary">
                 <span>Total Due</span>

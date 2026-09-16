@@ -19,7 +19,7 @@ interface KPICardProps {
 export function KPICard({
   title,
   amount,
-  currency = "USD",
+  currency = "PHP",
   changePercentage,
   periodLabel = "vs last month",
   icon,

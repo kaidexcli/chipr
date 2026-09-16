@@ -67,7 +67,7 @@ export function AccountModal({
         balance: parsedBalance,
         institution: institution.trim() || "Financial Institution",
         accountNumberMasked: accountNumberMasked.trim() || "••••",
-        currency: settings.currency || "USD",
+        currency: settings.currency || "PHP",
       });
     }
 
@@ -190,7 +190,7 @@ export function AccountModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Current Balance ($)
+                Current Balance (₱)
               </label>
               <input
                 type="number"

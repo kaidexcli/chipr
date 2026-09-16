@@ -2,17 +2,17 @@ import React from "react";
 
 interface MoneyAmountProps {
   amount: number; // In base currency units (e.g. 1250.50)
-  currency?: string; // Default: 'USD'
+  currency?: string; // Default: 'PHP'
   showSign?: boolean; // Force '+' for positive
   colored?: boolean; // Apply green for inflow, rose for outflow
-  privacyMask?: boolean; // Obfuscate as $••••••
+  privacyMask?: boolean; // Obfuscate as ₱••••••
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
 }
 
 export function MoneyAmount({
   amount,
-  currency = "USD",
+  currency = "PHP",
   showSign = false,
   colored = false,
   privacyMask = false,
@@ -24,7 +24,7 @@ export function MoneyAmount({
       <span
         className={`font-mono font-medium select-none tracking-wider text-text-muted opacity-60 ${className}`}
       >
-        $••••••
+        ₱••••••
       </span>
     );
   }
@@ -32,7 +32,8 @@ export function MoneyAmount({
   const isPositive = amount > 0;
   const isNegative = amount < 0;
 
-  const formatted = new Intl.NumberFormat("en-US", {
+  const locale = currency === "PHP" ? "en-PH" : "en-US";
+  const formatted = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,

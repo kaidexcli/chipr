@@ -164,10 +164,10 @@ export function CashFlowTrendChart({
           {activePoint && (
             <div className="absolute top-1 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 sm:gap-4 rounded-xl border border-border-subtle bg-surface/95 px-3 py-1.5 text-[11px] sm:text-xs shadow-lg backdrop-blur-xs font-mono animate-in fade-in duration-100">
               <span className="font-semibold text-text-primary">{activePoint.date}</span>
-              <span className="text-inflow">+${activePoint.inflow.toFixed(0)}</span>
-              <span className="text-outflow">-${activePoint.outflow.toFixed(0)}</span>
+              <span className="text-inflow">{privacyMask ? "₱••••••" : `+₱${activePoint.inflow.toFixed(0)}`}</span>
+              <span className="text-outflow">{privacyMask ? "₱••••••" : `-₱${activePoint.outflow.toFixed(0)}`}</span>
               <span className="text-text-muted font-normal hidden sm:inline">
-                Net: {activePoint.net >= 0 ? "+" : ""}${activePoint.net.toFixed(2)}
+                Net: {privacyMask ? "₱••••••" : `${activePoint.net >= 0 ? "+₱" : "-₱"}${Math.abs(activePoint.net).toFixed(2)}`}
               </span>
             </div>
           )}

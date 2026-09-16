@@ -62,7 +62,7 @@ function initializeSchema(db: Database.Database) {
       balance REAL NOT NULL,
       institution TEXT NOT NULL,
       account_number_masked TEXT,
-      currency TEXT DEFAULT 'USD',
+      currency TEXT DEFAULT 'PHP',
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -86,7 +86,7 @@ function initializeSchema(db: Database.Database) {
       entity TEXT NOT NULL,
       account_id TEXT,
       account_name TEXT,
-      currency TEXT DEFAULT 'USD',
+      currency TEXT DEFAULT 'PHP',
       is_tax_deductible INTEGER DEFAULT 0,
       deductible_percentage INTEGER DEFAULT 0,
       schedule_c_category TEXT,
@@ -141,7 +141,7 @@ function initializeSchema(db: Database.Database) {
       role TEXT,
       business_type TEXT,
       tax_id_masked TEXT,
-      currency TEXT DEFAULT 'USD',
+      currency TEXT DEFAULT 'PHP',
       fiscal_year_start TEXT DEFAULT 'January',
       default_workspace TEXT DEFAULT 'personal',
       default_privacy_mask INTEGER DEFAULT 0
@@ -160,7 +160,7 @@ function initializeSchema(db: Database.Database) {
   `);
 
   try {
-    db.exec("ALTER TABLE transactions ADD COLUMN currency TEXT DEFAULT 'USD'");
+    db.exec("ALTER TABLE transactions ADD COLUMN currency TEXT DEFAULT 'PHP'");
   } catch {
     // Column already exists
   }
@@ -202,8 +202,17 @@ function seedInitialData(db: Database.Database) {
   if (settingsCount === 0) {
     db.prepare(`
       INSERT INTO user_settings (id, personal_name, business_name, email, role, business_type, currency, default_workspace)
-      VALUES ('default', '', '', '', '', 'Sole Proprietorship', 'USD', 'personal')
+      VALUES ('default', '', '', '', '', 'Sole Proprietorship', 'PHP', 'personal')
     `).run();
+  }
+
+  // Ensure default currency is migrated to PHP if currently USD or null
+  try {
+    db.prepare("UPDATE user_settings SET currency = 'PHP' WHERE currency = 'USD' OR currency IS NULL").run();
+    db.prepare("UPDATE accounts SET currency = 'PHP' WHERE currency = 'USD' OR currency IS NULL").run();
+    db.prepare("UPDATE transactions SET currency = 'PHP' WHERE currency = 'USD' OR currency IS NULL").run();
+  } catch {
+    // Ignore migration failure if tables are not yet populated
   }
 }
 
@@ -232,7 +241,7 @@ export function getDbAccounts(): FinancialAccount[] {
     balance: r.balance,
     institution: r.institution,
     accountNumberMasked: r.account_number_masked || "•••• 0000",
-    currency: r.currency || "USD",
+    currency: r.currency || "PHP",
   }));
 }
 
@@ -303,7 +312,7 @@ export function getDbTransactions(limit = 100): Transaction[] {
     entity: r.entity as Transaction["entity"],
     accountId: r.account_id || "",
     accountName: r.account_name || "Account",
-    currency: r.currency || "USD",
+    currency: r.currency || "PHP",
     isTaxDeductible: Boolean(r.is_tax_deductible),
     deductiblePercentage: r.deductible_percentage,
     scheduleCCategory: r.schedule_c_category as ScheduleCCategory | undefined,
@@ -349,14 +358,14 @@ export function insertDbTransaction(
     db.prepare(`
       INSERT INTO accounts (id, name, type, entity, balance, institution, currency)
       VALUES (?, ?, 'checking', ?, 0, 'Primary Ledger', ?)
-    `).run(accountId, accountName, tx.entity, tx.currency || "USD");
+    `).run(accountId, accountName, tx.entity, tx.currency || "PHP");
   }
 
   // Dynamically resolve category using full financial taxonomy
   const finalCategory = resolveCategory(tx.category, tx.merchant, tx.entity);
 
   // Currency detection and settings sync
-  const txCurrency = tx.currency || "USD";
+  const txCurrency = tx.currency || "PHP";
   if (txCurrency === "PHP") {
     try {
       const currentSetting = db.prepare("SELECT currency FROM user_settings WHERE id = 'default'").get() as { currency: string } | undefined;
@@ -567,16 +576,37 @@ export function insertDbBudget(
   };
 }
 
-export function updateDbBudget(id: string, monthlyLimit: number): boolean {
+export function updateDbBudget(id: string, monthlyLimit: number, category?: string): boolean {
   const db = getDb();
+  if (category && category.trim()) {
+    const cleanCat = category.trim();
+    const res = db
+      .prepare("UPDATE budgets SET monthly_limit = ?, category = ? WHERE id = ?")
+      .run(monthlyLimit, cleanCat, id);
+    if (res.changes > 0) return true;
+
+    // If ID was an auto-budget (b-auto-...) or not found by ID, upsert by category
+    insertDbBudget(cleanCat, monthlyLimit, id);
+    return true;
+  }
+
   const res = db.prepare("UPDATE budgets SET monthly_limit = ? WHERE id = ?").run(monthlyLimit, id);
   return res.changes > 0;
 }
 
-export function deleteDbBudget(id: string): boolean {
+export function deleteDbBudget(id: string, category?: string): boolean {
   const db = getDb();
-  const res = db.prepare("DELETE FROM budgets WHERE id = ?").run(id);
-  return res.changes > 0;
+  let deleted = false;
+  const res1 = db.prepare("DELETE FROM budgets WHERE id = ?").run(id);
+  if (res1.changes > 0) deleted = true;
+
+  if (category && category.trim()) {
+    const res2 = db
+      .prepare("DELETE FROM budgets WHERE LOWER(category) = LOWER(?)")
+      .run(category.trim());
+    if (res2.changes > 0) deleted = true;
+  }
+  return deleted;
 }
 
 export function getDbInvoices(): Invoice[] {
@@ -651,7 +681,7 @@ export function getDbSettings(): UserSettings {
     return {
       personalName: "",
       businessName: "",
-      currency: "USD",
+      currency: "PHP",
       businessType: "Sole Proprietorship",
       defaultWorkspace: "personal",
     };
@@ -665,7 +695,7 @@ export function getDbSettings(): UserSettings {
     role: row.role || undefined,
     businessType: (row.business_type as UserSettings["businessType"]) || "Sole Proprietorship",
     taxIdMasked: row.tax_id_masked || undefined,
-    currency: row.currency || "USD",
+    currency: row.currency || "PHP",
     fiscalYearStart: row.fiscal_year_start || "January",
     defaultWorkspace: (row.default_workspace as UserSettings["defaultWorkspace"]) || "personal",
     defaultPrivacyMask: Boolean(row.default_privacy_mask),
@@ -686,7 +716,7 @@ export function clearDbData() {
   db.prepare("DELETE FROM chat_messages").run();
   db.prepare(`
     UPDATE user_settings
-    SET personal_name = '', business_name = '', email = '', phone = '', role = '', tax_id_masked = '', currency = 'USD'
+    SET personal_name = '', business_name = '', email = '', phone = '', role = '', tax_id_masked = '', currency = 'PHP'
     WHERE id = 'default'
   `).run();
 }

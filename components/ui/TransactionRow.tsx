@@ -52,7 +52,7 @@ export function TransactionRow({
   isOwnerDraw = false,
   accountName,
   note,
-  currency = "USD",
+  currency = "PHP",
   privacyMask = false,
   onReimburse,
   onEdit,

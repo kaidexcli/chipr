@@ -17,7 +17,7 @@ export function getDemoDataset() {
       balance: 12450.0,
       institution: "First National Bank",
       accountNumberMasked: "•••• 4108",
-      currency: "USD",
+      currency: "PHP",
     },
     {
       id: "acc-pers-2",
@@ -27,7 +27,7 @@ export function getDemoDataset() {
       balance: 48000.0,
       institution: "Marcus",
       accountNumberMasked: "•••• 9832",
-      currency: "USD",
+      currency: "PHP",
     },
     {
       id: "acc-pers-3",
@@ -37,7 +37,7 @@ export function getDemoDataset() {
       balance: 85200.0,
       institution: "Vanguard",
       accountNumberMasked: "•••• 1944",
-      currency: "USD",
+      currency: "PHP",
     },
     {
       id: "acc-pers-4",
@@ -47,7 +47,7 @@ export function getDemoDataset() {
       balance: -1850.5,
       institution: "Chase",
       accountNumberMasked: "•••• 7712",
-      currency: "USD",
+      currency: "PHP",
     },
     {
       id: "acc-biz-1",
@@ -57,7 +57,7 @@ export function getDemoDataset() {
       balance: 54300.0,
       institution: "Mercury",
       accountNumberMasked: "•••• 8021",
-      currency: "USD",
+      currency: "PHP",
     },
     {
       id: "acc-biz-2",
@@ -67,7 +67,7 @@ export function getDemoDataset() {
       balance: -2940.0,
       institution: "Brex",
       accountNumberMasked: "•••• 5590",
-      currency: "USD",
+      currency: "PHP",
     },
     {
       id: "acc-biz-3",
@@ -77,7 +77,7 @@ export function getDemoDataset() {
       balance: 18500.0,
       institution: "Mercury Treasury",
       accountNumberMasked: "•••• 0244",
-      currency: "USD",
+      currency: "PHP",
     },
   ];
 
