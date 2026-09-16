@@ -111,7 +111,7 @@ export function Header() {
             <button
               type="button"
               onClick={() => setWorkspace("business")}
-              className={`rounded-lg px-2.5 sm:px-3 py-1 transition-all cursor-pointer shrink-0 max-w-[120px] sm:max-w-[160px] truncate ${
+              className={`rounded-lg px-2.5 sm:px-3 py-1 transition-all cursor-pointer shrink-0 max-w-30 sm:max-w-40 truncate ${
                 workspace === "business"
                   ? "bg-sky-600 text-white shadow-xs font-bold"
                   : "text-text-muted hover:text-text-primary"
@@ -306,10 +306,10 @@ export function Header() {
               </>
             ) : (
               <>
-                <div className="flex h-5 w-5 sm:h-5.5 sm:w-5.5 items-center justify-center rounded-lg bg-gradient-to-tr from-brand to-indigo-500 text-white text-[10px] font-bold shadow-xs">
+                <div className="flex h-5 w-5 sm:h-5.5 sm:w-5.5 items-center justify-center rounded-lg bg-linear-to-tr from-brand to-indigo-500 text-white text-[10px] font-bold shadow-xs">
                   {initials}
                 </div>
-                <span className="hidden sm:inline font-medium max-w-[84px] truncate text-text-primary">
+                <span className="hidden sm:inline font-medium max-w-21 truncate text-text-primary">
                   {settings.personalName ? settings.personalName.split(" ")[0] : "Profile"}
                 </span>
               </>
@@ -358,7 +358,7 @@ export function Header() {
             }`}
           >
             <BuildingOfficeIcon className="w-3.5 h-3.5" />
-            <span className="truncate max-w-[120px]">{settings.businessName || "Business"}</span>
+            <span className="truncate max-w-30">{settings.businessName || "Business"}</span>
           </button>
         </div>
       </div>
