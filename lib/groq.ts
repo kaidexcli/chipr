@@ -9,22 +9,29 @@ import { getDbAppConfig, setDbAppConfig } from "@/lib/db";
 export { DEFAULT_GROQ_MODEL, AVAILABLE_GROQ_MODELS, type GroqModelOption };
 
 /**
- * Resolves the active Groq API key strictly from environment variables or database configuration.
- * Never hardcodes or falls back to any static key strings.
+ * Resolves the active Groq API key:
+ * Checks process.env.GROQ_API_KEY, NEXT_PUBLIC_GROQ_API_KEY, and GROQ_KEY.
+ * Cleans any surrounding quotes and whitespace.
+ * Never hardcodes or leaks keys.
  */
 export function getActiveGroqApiKey(explicitApiKey?: string): string {
   if (explicitApiKey && explicitApiKey.trim()) {
-    return explicitApiKey.trim();
+    return explicitApiKey.trim().replace(/^["']|["']$/g, "");
   }
 
-  if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim()) {
-    return process.env.GROQ_API_KEY.trim();
+  const envKey =
+    process.env.GROQ_API_KEY ||
+    process.env.NEXT_PUBLIC_GROQ_API_KEY ||
+    process.env.GROQ_KEY;
+
+  if (envKey && envKey.trim()) {
+    return envKey.trim().replace(/^["']|["']$/g, "");
   }
 
   try {
     const dbKey = getDbAppConfig("groq_api_key");
     if (dbKey && dbKey.trim()) {
-      return dbKey.trim();
+      return dbKey.trim().replace(/^["']|["']$/g, "");
     }
   } catch {}
 
@@ -39,7 +46,8 @@ export function isGroqConfigured(): boolean {
 }
 
 /**
- * Resolves the active Groq model across database preference, environment, and defaults.
+ * Resolves the active Groq model:
+ * Checks requestedModel, process.env.GROQ_MODEL, NEXT_PUBLIC_GROQ_MODEL, database, and defaults.
  */
 export function getActiveGroqModel(requestedModel?: string): string {
   if (
@@ -47,23 +55,27 @@ export function getActiveGroqModel(requestedModel?: string): string {
     requestedModel.trim() &&
     !requestedModel.includes("llama")
   ) {
-    return requestedModel.trim();
+    return requestedModel.trim().replace(/^["']|["']$/g, "");
+  }
+
+  const envModel =
+    process.env.GROQ_MODEL ||
+    process.env.NEXT_PUBLIC_GROQ_MODEL;
+
+  if (
+    envModel &&
+    envModel.trim() &&
+    !envModel.includes("llama")
+  ) {
+    return envModel.trim().replace(/^["']|["']$/g, "");
   }
 
   try {
     const dbModel = getDbAppConfig("groq_model");
     if (dbModel && dbModel.trim() && !dbModel.includes("llama")) {
-      return dbModel.trim();
+      return dbModel.trim().replace(/^["']|["']$/g, "");
     }
   } catch {}
-
-  if (
-    process.env.GROQ_MODEL &&
-    process.env.GROQ_MODEL.trim() &&
-    !process.env.GROQ_MODEL.includes("llama")
-  ) {
-    return process.env.GROQ_MODEL.trim();
-  }
 
   return DEFAULT_GROQ_MODEL;
 }
@@ -72,7 +84,11 @@ export function getActiveGroqModel(requestedModel?: string): string {
  * Saves the selected Groq model to SQLite so that all devices immediately share it.
  */
 export function saveServerGroqModel(model: string): void {
-  setDbAppConfig("groq_model", model.trim());
+  try {
+    setDbAppConfig("groq_model", model.trim());
+  } catch (err) {
+    console.warn("[Groq] Could not save model preference to DB:", err);
+  }
 }
 
 /**
@@ -82,7 +98,7 @@ export function getGroqClient(explicitApiKey?: string): Groq {
   const apiKey = getActiveGroqApiKey(explicitApiKey);
   if (!apiKey) {
     throw new Error(
-      "GROQ_API_KEY is not configured on the server. Please ensure GROQ_API_KEY is set in your .env.local file or server environment."
+      "GROQ_API_KEY is not configured on the server. Please ensure GROQ_API_KEY is set in your environment variables."
     );
   }
 
@@ -98,12 +114,12 @@ export async function verifyGroqApiKey(
   apiKey?: string
 ): Promise<{ valid: boolean; message?: string }> {
   try {
-    const key = apiKey ? apiKey.trim() : getActiveGroqApiKey();
+    const key = apiKey ? apiKey.trim().replace(/^["']|["']$/g, "") : getActiveGroqApiKey();
     if (!key) {
       return {
         valid: false,
         message:
-          "GROQ_API_KEY is missing. Please set GROQ_API_KEY in your server's .env.local file.",
+          "GROQ_API_KEY is missing. Please set GROQ_API_KEY in your deployment environment variables.",
       };
     }
 

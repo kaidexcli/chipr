@@ -74,8 +74,8 @@ export function ChatView() {
   });
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-  // Groq is centrally active on the server for all devices
-  const isGroqActive = true;
+  // Groq status centrally reported by the server
+  const [isGroqActive, setIsGroqActive] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -86,11 +86,16 @@ export function ChatView() {
     fetch("/api/chat/settings")
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.model && !data.model.includes("llama")) {
-          setSelectedModel(data.model);
-          try {
-            localStorage.setItem(GROQ_MODEL_STORAGE, data.model);
-          } catch {}
+        if (data) {
+          if (typeof data.isConfigured === "boolean") {
+            setIsGroqActive(data.isConfigured);
+          }
+          if (data.model && !data.model.includes("llama")) {
+            setSelectedModel(data.model);
+            try {
+              localStorage.setItem(GROQ_MODEL_STORAGE, data.model);
+            } catch {}
+          }
         }
       })
       .catch(() => {});

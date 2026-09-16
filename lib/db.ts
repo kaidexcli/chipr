@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import {
   FinancialAccount,
   Transaction,
@@ -28,28 +29,96 @@ export {
 
 let dbInstance: Database.Database | null = null;
 
+/**
+ * Resolves a safe writable database path across local, Docker, and serverless environments (e.g. Vercel, AWS Lambda).
+ */
+function resolveDatabaseLocation(): { dbPath: string; isMemory: boolean } {
+  const isServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NETLIFY ||
+    process.env.NOW_REGION
+  );
+
+  // In serverless environments (Vercel / AWS Lambda), the root filesystem is read-only.
+  // The only writable directory is os.tmpdir() (/tmp).
+  if (isServerless) {
+    try {
+      const tmpDir = path.join(os.tmpdir(), "chipr_db");
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+      return { dbPath: path.join(tmpDir, "chipr.db"), isMemory: false };
+    } catch {
+      return { dbPath: ":memory:", isMemory: true };
+    }
+  }
+
+  // Local or containerized environments with writable filesystem
+  try {
+    const dataDir = path.join(process.cwd(), "data");
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    return { dbPath: path.join(dataDir, "chipr.db"), isMemory: false };
+  } catch {
+    // If process.cwd() is read-only for any reason, fallback to /tmp
+    try {
+      const tmpDir = path.join(os.tmpdir(), "chipr_db");
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+      return { dbPath: path.join(tmpDir, "chipr.db"), isMemory: false };
+    } catch {
+      return { dbPath: ":memory:", isMemory: true };
+    }
+  }
+}
+
 export function getDb(): Database.Database {
   if (dbInstance) {
     return dbInstance;
   }
 
-  const dataDir = path.join(process.cwd(), "data");
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+  const { dbPath, isMemory } = resolveDatabaseLocation();
+
+  try {
+    const db = new Database(dbPath);
+
+    if (!isMemory && dbPath !== ":memory:") {
+      try {
+        db.pragma("journal_mode = WAL");
+      } catch {
+        db.pragma("journal_mode = MEMORY");
+      }
+    } else {
+      db.pragma("journal_mode = MEMORY");
+    }
+
+    db.pragma("foreign_keys = ON");
+
+    initializeSchema(db);
+    seedInitialData(db);
+
+    dbInstance = db;
+    return db;
+  } catch (err) {
+    console.warn("[Chipr DB] Failed to open SQLite at", dbPath, "- falling back to :memory:", err);
+    try {
+      const memDb = new Database(":memory:");
+      memDb.pragma("journal_mode = MEMORY");
+      memDb.pragma("foreign_keys = ON");
+
+      initializeSchema(memDb);
+      seedInitialData(memDb);
+
+      dbInstance = memDb;
+      return memDb;
+    } catch (criticalErr) {
+      console.error("[Chipr DB Critical] Could not initialize SQLite database:", criticalErr);
+      throw criticalErr;
+    }
   }
-
-  const dbPath = path.join(dataDir, "chipr.db");
-  const db = new Database(dbPath);
-
-  // Enable WAL mode for high performance concurrent read/writes
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
-
-  initializeSchema(db);
-  seedInitialData(db);
-
-  dbInstance = db;
-  return db;
 }
 
 function initializeSchema(db: Database.Database) {

@@ -20,6 +20,7 @@ import {
   getDbInvoices,
   getDbSettings,
 } from "@/lib/db";
+import { ExpenseCategory, STANDARD_CATEGORIES } from "@/lib/categories";
 import { ChatContextScope } from "@/types/chat";
 import {
   FinancialAccount,
@@ -112,13 +113,51 @@ export async function POST(req: NextRequest) {
     const targetModel = getActiveGroqModel(requestedModel);
     const activeModel = await resolveActiveModel(groq, targetModel);
 
-    // Pull canonical categories and fresh ledger snapshot from SQLite database
-    const dbCategories = getDbCategories();
-    const dbAccounts = financialContext?.accounts?.length ? financialContext.accounts : getDbAccounts();
-    const dbTransactions = financialContext?.transactions?.length ? financialContext.transactions : getDbTransactions(50);
-    const dbBudgets = financialContext?.budgets?.length ? financialContext.budgets : getDbBudgets();
-    const dbInvoices = financialContext?.invoices?.length ? financialContext.invoices : getDbInvoices();
-    const dbSettings = financialContext?.settings || getDbSettings();
+    // Pull canonical categories and fresh ledger snapshot safely
+    let dbCategories: ExpenseCategory[] = STANDARD_CATEGORIES;
+    try {
+      const queried = getDbCategories();
+      if (queried && queried.length > 0) {
+        dbCategories = queried;
+      }
+    } catch {
+      dbCategories = STANDARD_CATEGORIES;
+    }
+
+    let dbAccounts = financialContext?.accounts?.length ? financialContext.accounts : [];
+    if (!dbAccounts.length) {
+      try {
+        dbAccounts = getDbAccounts();
+      } catch {}
+    }
+
+    let dbTransactions = financialContext?.transactions?.length ? financialContext.transactions : [];
+    if (!dbTransactions.length) {
+      try {
+        dbTransactions = getDbTransactions(50);
+      } catch {}
+    }
+
+    let dbBudgets = financialContext?.budgets?.length ? financialContext.budgets : [];
+    if (!dbBudgets.length) {
+      try {
+        dbBudgets = getDbBudgets();
+      } catch {}
+    }
+
+    let dbInvoices = financialContext?.invoices?.length ? financialContext.invoices : [];
+    if (!dbInvoices.length) {
+      try {
+        dbInvoices = getDbInvoices();
+      } catch {}
+    }
+
+    let dbSettings = financialContext?.settings;
+    if (!dbSettings) {
+      try {
+        dbSettings = getDbSettings();
+      } catch {}
+    }
 
     // Find latest user query to target semantic ledger retrieval
     const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");

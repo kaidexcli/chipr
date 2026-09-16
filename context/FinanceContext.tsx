@@ -397,13 +397,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       .then((res) => res.json())
       .then((data) => {
         if (data && data.status === "ok") {
-          setAccounts(Array.isArray(data.accounts) ? data.accounts : []);
-          setTransactions(Array.isArray(data.transactions) ? data.transactions : []);
+          // Only overwrite client state if server returned non-empty arrays (preserves local cache on serverless fresh starts)
+          if (Array.isArray(data.accounts) && data.accounts.length > 0) {
+            setAccounts(data.accounts);
+          }
+          if (Array.isArray(data.transactions) && data.transactions.length > 0) {
+            setTransactions(data.transactions);
+          }
           if (Array.isArray(data.budgets) && data.budgets.length > 0) {
             setRawBudgets(data.budgets);
           }
-          setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
-          if (data.settings) {
+          if (Array.isArray(data.invoices) && data.invoices.length > 0) {
+            setInvoices(data.invoices);
+          }
+          if (data.settings && (data.settings.personalName || data.settings.businessName)) {
             setSettings((prev) => ({ ...prev, ...data.settings }));
           }
         }
