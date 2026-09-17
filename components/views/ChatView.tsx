@@ -764,10 +764,10 @@ Your financial workspace currently has:
                   <div
                     className={`rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words ${
                       isUser
-                        ? "bg-brand text-white rounded-tr-xs shadow-xs"
+                        ? "bg-brand text-white shadow-xs"
                         : isError
-                        ? "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-900 dark:text-rose-100 rounded-tl-xs shadow-xs"
-                        : "bg-canvas border border-border-subtle text-text-primary rounded-tl-xs shadow-xs"
+                        ? "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-900 dark:text-rose-100 shadow-xs"
+                        : "bg-canvas border border-border-subtle text-text-primary shadow-xs"
                     }`}
                   >
                     {msg.content
@@ -933,7 +933,7 @@ Your financial workspace currently has:
               <span className="text-[10px] text-text-muted font-mono mb-1">
                 Chipr AI • Categorizing Expense
               </span>
-              <div className="flex items-center gap-2 rounded-2xl rounded-tl-xs border border-border-subtle bg-canvas px-4 py-3 text-xs text-text-secondary shadow-xs">
+              <div className="flex items-center gap-2 rounded-2xl border border-border-subtle bg-canvas px-4 py-3 text-xs text-text-secondary shadow-xs">
                 <span className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-brand animate-bounce [animation-delay:-0.3s]" />
                   <span className="h-2 w-2 rounded-full bg-brand animate-bounce [animation-delay:-0.15s]" />
@@ -959,7 +959,7 @@ Your financial workspace currently has:
       </div>
 
       {/* 3. Input Console */}
-      <div className="border-t border-border-subtle bg-surface/80 p-3 sm:p-4 shrink-0 space-y-1.5">
+      <div className="p-3 sm:p-4 pt-0 shrink-0 space-y-1.5 bg-transparent">
         <div className="relative flex flex-col rounded-2xl border border-border-subtle bg-canvas focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 transition-all shadow-xs p-2.5 sm:p-3">
           {/* Textarea */}
           <textarea

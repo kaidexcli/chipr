@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getDbTransactions,
   insertDbTransaction,
+  updateDbTransaction,
   deleteDbTransaction,
 } from "@/lib/db";
 import { Transaction } from "@/types/finance";
@@ -58,6 +59,43 @@ export async function POST(req: NextRequest) {
     console.error("[POST /api/transactions Error]:", err);
     return NextResponse.json(
       { error: err.message || "Failed to record transaction in database" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT /api/transactions
+ * Updates an existing transaction in SQLite database
+ */
+export async function PUT(req: NextRequest) {
+  try {
+    const body: { id: string } & Partial<Transaction> = await req.json();
+
+    if (!body.id) {
+      return NextResponse.json(
+        { error: "Transaction ID is required." },
+        { status: 400 }
+      );
+    }
+
+    const updated = updateDbTransaction(body.id, body);
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Transaction not found." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      status: "ok",
+      id: body.id,
+    });
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error("[PUT /api/transactions Error]:", err);
+    return NextResponse.json(
+      { error: err.message || "Failed to update transaction in database" },
       { status: 500 }
     );
   }

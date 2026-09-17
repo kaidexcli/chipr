@@ -27,7 +27,9 @@ export {
   getBusinessCategories,
 };
 
-let dbInstance: Database.Database | null = null;
+const globalForDb = globalThis as unknown as {
+  chiprDb?: Database.Database;
+};
 
 /**
  * Resolves a safe writable database path across local, Docker, and serverless environments (e.g. Vercel, AWS Lambda).
@@ -76,48 +78,68 @@ function resolveDatabaseLocation(): { dbPath: string; isMemory: boolean } {
 }
 
 export function getDb(): Database.Database {
-  if (dbInstance) {
-    return dbInstance;
+  if (globalForDb.chiprDb) {
+    try {
+      // Test liveness
+      globalForDb.chiprDb.prepare("SELECT 1").get();
+      return globalForDb.chiprDb;
+    } catch {
+      globalForDb.chiprDb = undefined;
+    }
   }
 
   const { dbPath, isMemory } = resolveDatabaseLocation();
 
-  try {
-    const db = new Database(dbPath);
+  // Retry opening up to 3 times to handle temporary file locks on Windows
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const db = new Database(dbPath, { timeout: 10000 });
 
-    if (!isMemory && dbPath !== ":memory:") {
-      try {
-        db.pragma("journal_mode = WAL");
-      } catch {
+      // Busy timeout so concurrent operations on Windows wait instead of throwing SQLITE_BUSY
+      db.pragma("busy_timeout = 10000");
+
+      if (!isMemory && dbPath !== ":memory:") {
+        try {
+          db.pragma("journal_mode = WAL");
+        } catch {
+          db.pragma("journal_mode = DELETE");
+        }
+      } else {
         db.pragma("journal_mode = MEMORY");
       }
-    } else {
-      db.pragma("journal_mode = MEMORY");
+
+      db.pragma("foreign_keys = ON");
+
+      initializeSchema(db);
+      seedInitialData(db);
+
+      globalForDb.chiprDb = db;
+      return db;
+    } catch (err) {
+      lastError = err;
+      // If not the last attempt and not in-memory, brief delay before retry
+      if (attempt < 3 && dbPath !== ":memory:") {
+        const start = Date.now();
+        while (Date.now() - start < 100) {} // 100ms busy-wait
+      }
     }
+  }
 
-    db.pragma("foreign_keys = ON");
+  console.warn("[Chipr DB] Failed to open SQLite at", dbPath, "- falling back to :memory:", lastError);
+  try {
+    const memDb = new Database(":memory:");
+    memDb.pragma("journal_mode = MEMORY");
+    memDb.pragma("foreign_keys = ON");
 
-    initializeSchema(db);
-    seedInitialData(db);
+    initializeSchema(memDb);
+    seedInitialData(memDb);
 
-    dbInstance = db;
-    return db;
-  } catch (err) {
-    console.warn("[Chipr DB] Failed to open SQLite at", dbPath, "- falling back to :memory:", err);
-    try {
-      const memDb = new Database(":memory:");
-      memDb.pragma("journal_mode = MEMORY");
-      memDb.pragma("foreign_keys = ON");
-
-      initializeSchema(memDb);
-      seedInitialData(memDb);
-
-      dbInstance = memDb;
-      return memDb;
-    } catch (criticalErr) {
-      console.error("[Chipr DB Critical] Could not initialize SQLite database:", criticalErr);
-      throw criticalErr;
-    }
+    globalForDb.chiprDb = memDb;
+    return memDb;
+  } catch (criticalErr) {
+    console.error("[Chipr DB Critical] Could not initialize SQLite database:", criticalErr);
+    throw criticalErr;
   }
 }
 
@@ -317,6 +339,78 @@ export function getDbAccounts(): FinancialAccount[] {
     accountNumberMasked: r.account_number_masked || "•••• 0000",
     currency: r.currency || "PHP",
   }));
+}
+
+export function insertDbAccount(acc: FinancialAccount): FinancialAccount {
+  const db = getDb();
+  const id = acc.id || `acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  db.prepare(`
+    INSERT INTO accounts (id, name, type, entity, balance, institution, account_number_masked, currency)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      type = excluded.type,
+      entity = excluded.entity,
+      balance = excluded.balance,
+      institution = excluded.institution,
+      account_number_masked = excluded.account_number_masked,
+      currency = excluded.currency
+  `).run(
+    id,
+    acc.name,
+    acc.type,
+    acc.entity,
+    acc.balance || 0,
+    acc.institution || "Primary Ledger",
+    acc.accountNumberMasked || "•••• 0000",
+    acc.currency || "PHP"
+  );
+
+  return {
+    ...acc,
+    id,
+    currency: acc.currency || "PHP",
+  };
+}
+
+export function updateDbAccount(id: string, updates: Partial<FinancialAccount>): boolean {
+  const db = getDb();
+  const existing = db.prepare("SELECT * FROM accounts WHERE id = ?").get(id) as
+    | {
+        id: string;
+        name: string;
+        type: string;
+        entity: string;
+        balance: number;
+        institution: string;
+        account_number_masked: string;
+        currency: string;
+      }
+    | undefined;
+
+  if (!existing) return false;
+
+  const newName = updates.name !== undefined ? updates.name : existing.name;
+  const newType = updates.type !== undefined ? updates.type : existing.type;
+  const newEntity = updates.entity !== undefined ? updates.entity : existing.entity;
+  const newBalance = updates.balance !== undefined ? updates.balance : existing.balance;
+  const newInst = updates.institution !== undefined ? updates.institution : existing.institution;
+  const newMasked = updates.accountNumberMasked !== undefined ? updates.accountNumberMasked : existing.account_number_masked;
+  const newCurr = updates.currency !== undefined ? updates.currency : existing.currency;
+
+  const res = db.prepare(`
+    UPDATE accounts
+    SET name = ?, type = ?, entity = ?, balance = ?, institution = ?, account_number_masked = ?, currency = ?
+    WHERE id = ?
+  `).run(newName, newType, newEntity, newBalance, newInst, newMasked, newCurr, id);
+
+  return res.changes > 0;
+}
+
+export function deleteDbAccount(id: string): boolean {
+  const db = getDb();
+  const res = db.prepare("DELETE FROM accounts WHERE id = ?").run(id);
+  return res.changes > 0;
 }
 
 export function getDbCategories(entityFilter?: "personal" | "business"): ExpenseCategory[] {
@@ -551,6 +645,89 @@ export function deleteDbTransaction(id: string): boolean {
   return res.changes > 0;
 }
 
+export function updateDbTransaction(id: string, updates: Partial<Transaction>): boolean {
+  const db = getDb();
+  const existing = db.prepare("SELECT * FROM transactions WHERE id = ?").get(id) as
+    | {
+        id: string;
+        date: string;
+        merchant: string;
+        category: string;
+        amount: number;
+        entity: string;
+        account_id: string | null;
+        account_name: string | null;
+        currency: string | null;
+        is_tax_deductible: number;
+        deductible_percentage: number;
+        schedule_c_category: string | null;
+        reimbursement_status: string | null;
+        is_owner_draw: number;
+        is_capital_contribution: number;
+        note: string | null;
+      }
+    | undefined;
+
+  if (!existing) return false;
+
+  // If amount or account_id changed, adjust account balance
+  const oldAmount = existing.amount;
+  const oldAccountId = existing.account_id;
+  const newAmount = updates.amount !== undefined ? updates.amount : oldAmount;
+  const newAccountId = updates.accountId !== undefined ? updates.accountId : oldAccountId;
+
+  if (oldAccountId && (oldAmount !== newAmount || oldAccountId !== newAccountId)) {
+    // Revert old amount from old account
+    db.prepare("UPDATE accounts SET balance = balance - ? WHERE id = ?").run(oldAmount, oldAccountId);
+    // Apply new amount to new account
+    if (newAccountId) {
+      db.prepare("UPDATE accounts SET balance = balance + ? WHERE id = ?").run(newAmount, newAccountId);
+    }
+  }
+
+  const newDate = updates.date !== undefined ? updates.date : existing.date;
+  const newMerchant = updates.merchant !== undefined ? updates.merchant : existing.merchant;
+  const newCategory = updates.category !== undefined ? resolveCategory(updates.category, newMerchant, (updates.entity || existing.entity) as "personal" | "business") : existing.category;
+  const newEntity = updates.entity !== undefined ? updates.entity : existing.entity;
+  const newAccountName = updates.accountName !== undefined ? updates.accountName : existing.account_name;
+  const newCurrency = updates.currency !== undefined ? updates.currency : (existing.currency || "PHP");
+  const newIsTaxDeductible = updates.isTaxDeductible !== undefined ? (updates.isTaxDeductible ? 1 : 0) : existing.is_tax_deductible;
+  const newDeductiblePct = updates.deductiblePercentage !== undefined ? updates.deductiblePercentage : existing.deductible_percentage;
+  const newScheduleC = updates.scheduleCCategory !== undefined ? updates.scheduleCCategory : existing.schedule_c_category;
+  const newReimbStatus = updates.reimbursementStatus !== undefined ? updates.reimbursementStatus : (existing.reimbursement_status || "none");
+  const newOwnerDraw = updates.isOwnerDraw !== undefined ? (updates.isOwnerDraw ? 1 : 0) : existing.is_owner_draw;
+  const newCapitalContrib = updates.isCapitalContribution !== undefined ? (updates.isCapitalContribution ? 1 : 0) : existing.is_capital_contribution;
+  const newNote = updates.note !== undefined ? updates.note : existing.note;
+
+  const res = db.prepare(`
+    UPDATE transactions
+    SET date = ?, merchant = ?, category = ?, amount = ?, entity = ?,
+        account_id = ?, account_name = ?, currency = ?, is_tax_deductible = ?,
+        deductible_percentage = ?, schedule_c_category = ?, reimbursement_status = ?,
+        is_owner_draw = ?, is_capital_contribution = ?, note = ?
+    WHERE id = ?
+  `).run(
+    newDate,
+    newMerchant,
+    newCategory,
+    newAmount,
+    newEntity,
+    newAccountId,
+    newAccountName,
+    newCurrency,
+    newIsTaxDeductible,
+    newDeductiblePct,
+    newScheduleC,
+    newReimbStatus,
+    newOwnerDraw,
+    newCapitalContrib,
+    newNote,
+    id
+  );
+
+  return res.changes > 0;
+}
+
 export function getDbBudgets(): BudgetEnvelope[] {
   const db = getDb();
 
@@ -579,7 +756,7 @@ export function getDbBudgets(): BudgetEnvelope[] {
     spentMap.set(key, (spentMap.get(key) || 0) + r.spent);
   }
 
-  const budgetList: BudgetEnvelope[] = budgets.map((b) => {
+  return budgets.map((b) => {
     const catKey = b.category.toLowerCase().trim();
     let spent = spentMap.get(catKey) || 0;
     if (!spent) {
@@ -597,25 +774,6 @@ export function getDbBudgets(): BudgetEnvelope[] {
       entity: "personal" as const,
     };
   });
-
-  // Automatically include any category with recorded personal expenses so it immediately
-  // surfaces in the Budget tab even before an explicit ceiling limit is established
-  const existingCategories = new Set(budgets.map((b) => b.category.toLowerCase().trim()));
-  for (const [catKey, spentAmount] of spentMap.entries()) {
-    if (!existingCategories.has(catKey) && spentAmount > 0) {
-      const matchingRow = spentRows.find((r) => r.category.toLowerCase().trim() === catKey);
-      const properName = matchingRow ? matchingRow.category : catKey;
-      budgetList.push({
-        id: `b-auto-${catKey.replace(/[^a-z0-9]/g, "-")}`,
-        category: properName,
-        monthlyLimit: 0,
-        spent: spentAmount,
-        entity: "personal",
-      });
-    }
-  }
-
-  return budgetList;
 }
 
 export function insertDbBudget(
@@ -735,6 +893,138 @@ export function getDbInvoices(): Invoice[] {
   });
 }
 
+export function insertDbInvoice(inv: Invoice): Invoice {
+  const db = getDb();
+  const id = inv.id || `inv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const invoiceNumber = inv.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`;
+
+  const insertTx = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO invoices (
+        id, invoice_number, client_name, client_email, issue_date,
+        due_date, payment_terms, status, subtotal, tax, total, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        invoice_number = excluded.invoice_number,
+        client_name = excluded.client_name,
+        client_email = excluded.client_email,
+        issue_date = excluded.issue_date,
+        due_date = excluded.due_date,
+        payment_terms = excluded.payment_terms,
+        status = excluded.status,
+        subtotal = excluded.subtotal,
+        tax = excluded.tax,
+        total = excluded.total,
+        notes = excluded.notes
+    `).run(
+      id,
+      invoiceNumber,
+      inv.clientName,
+      inv.clientEmail || "",
+      inv.issueDate,
+      inv.dueDate,
+      inv.paymentTerms,
+      inv.status,
+      inv.subtotal,
+      inv.tax,
+      inv.total,
+      inv.notes || ""
+    );
+
+    db.prepare("DELETE FROM invoice_items WHERE invoice_id = ?").run(id);
+
+    const insertItem = db.prepare(`
+      INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, amount)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const item of inv.lineItems || []) {
+      const itemId = item.id || `li-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      insertItem.run(itemId, id, item.description, item.quantity, item.unitPrice, item.amount);
+    }
+  });
+
+  insertTx();
+
+  return {
+    ...inv,
+    id,
+    invoiceNumber,
+  };
+}
+
+export function updateDbInvoice(id: string, updates: Partial<Invoice>): boolean {
+  const db = getDb();
+  const existing = db.prepare("SELECT * FROM invoices WHERE id = ?").get(id) as
+    | {
+        id: string;
+        invoice_number: string;
+        client_name: string;
+        client_email: string;
+        issue_date: string;
+        due_date: string;
+        payment_terms: string;
+        status: string;
+        subtotal: number;
+        tax: number;
+        total: number;
+        notes: string;
+      }
+    | undefined;
+
+  if (!existing) return false;
+
+  const newNum = updates.invoiceNumber !== undefined ? updates.invoiceNumber : existing.invoice_number;
+  const newName = updates.clientName !== undefined ? updates.clientName : existing.client_name;
+  const newEmail = updates.clientEmail !== undefined ? updates.clientEmail : existing.client_email;
+  const newIssue = updates.issueDate !== undefined ? updates.issueDate : existing.issue_date;
+  const newDue = updates.dueDate !== undefined ? updates.dueDate : existing.due_date;
+  const newTerms = updates.paymentTerms !== undefined ? updates.paymentTerms : existing.payment_terms;
+  const newStatus = updates.status !== undefined ? updates.status : existing.status;
+  const newSubtotal = updates.subtotal !== undefined ? updates.subtotal : existing.subtotal;
+  const newTax = updates.tax !== undefined ? updates.tax : existing.tax;
+  const newTotal = updates.total !== undefined ? updates.total : existing.total;
+  const newNotes = updates.notes !== undefined ? updates.notes : existing.notes;
+
+  const updateTx = db.transaction(() => {
+    db.prepare(`
+      UPDATE invoices
+      SET invoice_number = ?, client_name = ?, client_email = ?, issue_date = ?,
+          due_date = ?, payment_terms = ?, status = ?, subtotal = ?, tax = ?,
+          total = ?, notes = ?
+      WHERE id = ?
+    `).run(
+      newNum, newName, newEmail, newIssue, newDue, newTerms,
+      newStatus, newSubtotal, newTax, newTotal, newNotes, id
+    );
+
+    if (updates.lineItems) {
+      db.prepare("DELETE FROM invoice_items WHERE invoice_id = ?").run(id);
+      const insertItem = db.prepare(`
+        INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, amount)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      for (const item of updates.lineItems) {
+        const itemId = item.id || `li-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        insertItem.run(itemId, id, item.description, item.quantity, item.unitPrice, item.amount);
+      }
+    }
+  });
+
+  updateTx();
+  return true;
+}
+
+export function deleteDbInvoice(id: string): boolean {
+  const db = getDb();
+  const deleteTx = db.transaction(() => {
+    db.prepare("DELETE FROM invoice_items WHERE invoice_id = ?").run(id);
+    const res = db.prepare("DELETE FROM invoices WHERE id = ?").run(id);
+    return res.changes > 0;
+  });
+  return deleteTx();
+}
+
 export function getDbSettings(): UserSettings {
   const db = getDb();
   const row = db.prepare("SELECT * FROM user_settings WHERE id = 'default'").get() as {
@@ -774,6 +1064,59 @@ export function getDbSettings(): UserSettings {
     defaultWorkspace: (row.default_workspace as UserSettings["defaultWorkspace"]) || "personal",
     defaultPrivacyMask: Boolean(row.default_privacy_mask),
   };
+}
+
+export function updateDbSettings(settings: Partial<UserSettings>): UserSettings {
+  const db = getDb();
+  const current = getDbSettings();
+
+  const merged: UserSettings = {
+    personalName: settings.personalName !== undefined ? settings.personalName : current.personalName,
+    businessName: settings.businessName !== undefined ? settings.businessName : current.businessName,
+    email: settings.email !== undefined ? settings.email : current.email,
+    phone: settings.phone !== undefined ? settings.phone : current.phone,
+    role: settings.role !== undefined ? settings.role : current.role,
+    businessType: settings.businessType !== undefined ? settings.businessType : current.businessType,
+    taxIdMasked: settings.taxIdMasked !== undefined ? settings.taxIdMasked : current.taxIdMasked,
+    currency: settings.currency !== undefined ? settings.currency : current.currency,
+    fiscalYearStart: settings.fiscalYearStart !== undefined ? settings.fiscalYearStart : current.fiscalYearStart,
+    defaultWorkspace: settings.defaultWorkspace !== undefined ? settings.defaultWorkspace : current.defaultWorkspace,
+    defaultPrivacyMask: settings.defaultPrivacyMask !== undefined ? settings.defaultPrivacyMask : current.defaultPrivacyMask,
+  };
+
+  db.prepare(`
+    INSERT INTO user_settings (
+      id, personal_name, business_name, email, phone, role,
+      business_type, tax_id_masked, currency, fiscal_year_start,
+      default_workspace, default_privacy_mask
+    ) VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      personal_name = excluded.personal_name,
+      business_name = excluded.business_name,
+      email = excluded.email,
+      phone = excluded.phone,
+      role = excluded.role,
+      business_type = excluded.business_type,
+      tax_id_masked = excluded.tax_id_masked,
+      currency = excluded.currency,
+      fiscal_year_start = excluded.fiscal_year_start,
+      default_workspace = excluded.default_workspace,
+      default_privacy_mask = excluded.default_privacy_mask
+  `).run(
+    merged.personalName,
+    merged.businessName,
+    merged.email || null,
+    merged.phone || null,
+    merged.role || null,
+    merged.businessType || "Sole Proprietorship",
+    merged.taxIdMasked || null,
+    merged.currency || "PHP",
+    merged.fiscalYearStart || "January",
+    merged.defaultWorkspace || "personal",
+    merged.defaultPrivacyMask ? 1 : 0
+  );
+
+  return merged;
 }
 
 /**

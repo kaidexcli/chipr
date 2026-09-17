@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect } from "react";
+import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from "react";
 import {
   WorkspaceEntity,
   FinancialAccount,
@@ -192,6 +192,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [vendorBills, setVendorBills] = useState<VendorBill[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const isExplicitClearRef = useRef<boolean>(false);
 
   // Add Credit modal states
   const [isAddCreditModalOpen, setIsAddCreditModalOpen] = useState<boolean>(false);
@@ -274,98 +275,98 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     return list;
   }, [rawBudgets, transactions, dismissedBudgetCategories]);
 
-  // Hydrate from localStorage and SQLite database on mount
+  // Synchronous client-mount hydration from localStorage and live SQLite sync
   useEffect(() => {
-    // Hydrate local cache asynchronously to avoid synchronous cascading renders flagged by React 19
-    const timer = setTimeout(() => {
-      try {
-        const storedAccounts = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
-        const storedTxs = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-        const storedInvoices = localStorage.getItem(STORAGE_KEYS.INVOICES);
-        const storedBudgets = localStorage.getItem(STORAGE_KEYS.BUDGETS);
-        const storedVendorBills = localStorage.getItem(STORAGE_KEYS.VENDOR_BILLS);
-        const storedSubs = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTIONS);
-        const storedChat = localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
-        const storedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-        const storedWs = localStorage.getItem(STORAGE_KEYS.WORKSPACE);
-        const storedDark = localStorage.getItem(STORAGE_KEYS.DARK_MODE);
-        const storedPrivacy = localStorage.getItem(STORAGE_KEYS.PRIVACY);
+    try {
+      const storedAccounts = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+      const storedTxs = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+      const storedInvoices = localStorage.getItem(STORAGE_KEYS.INVOICES);
+      const storedBudgets = localStorage.getItem(STORAGE_KEYS.BUDGETS);
+      const storedVendorBills = localStorage.getItem(STORAGE_KEYS.VENDOR_BILLS);
+      const storedSubs = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTIONS);
+      const storedChat = localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
+      const storedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      const storedWs = localStorage.getItem(STORAGE_KEYS.WORKSPACE);
+      const storedDark = localStorage.getItem(STORAGE_KEYS.DARK_MODE);
+      const storedPrivacy = localStorage.getItem(STORAGE_KEYS.PRIVACY);
 
-        if (storedAccounts) {
-          const parsed = JSON.parse(storedAccounts);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((a: FinancialAccount) => {
-              if (a.currency === "USD" || !a.currency) a.currency = "PHP";
-            });
-            setAccounts(parsed);
-          }
+      if (storedAccounts) {
+        const parsed = JSON.parse(storedAccounts);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach((a: FinancialAccount) => {
+            if (a.currency === "USD" || !a.currency) a.currency = "PHP";
+          });
+          setAccounts(parsed);
         }
-        if (storedTxs) {
-          const parsed = JSON.parse(storedTxs);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((t: Transaction) => {
-              if (t.currency === "USD" || !t.currency) t.currency = "PHP";
-            });
-            setTransactions(parsed);
-          }
-        }
-        if (storedInvoices) setInvoices(JSON.parse(storedInvoices));
-        if (storedBudgets) {
-          try {
-            const parsed = JSON.parse(storedBudgets);
-            if (Array.isArray(parsed) && parsed.length > 0) setRawBudgets(parsed);
-          } catch {}
-        }
-        const storedDismissed = localStorage.getItem(STORAGE_KEYS.DISMISSED_BUDGETS);
-        if (storedDismissed) {
-          try {
-            const parsed = JSON.parse(storedDismissed);
-            if (Array.isArray(parsed)) setDismissedBudgetCategories(parsed);
-          } catch {}
-        }
-        if (storedVendorBills) setVendorBills(JSON.parse(storedVendorBills));
-        if (storedSubs) setSubscriptions(JSON.parse(storedSubs));
-        if (storedChat) setChatMessages(JSON.parse(storedChat));
-        if (storedSettings) {
-          const parsed = JSON.parse(storedSettings);
-          if (!parsed.currency || parsed.currency === "USD") {
-            parsed.currency = "PHP";
-          }
-          setSettings(parsed);
-        }
-        if (storedWs) {
-          if (storedWs === "business") {
-            setWorkspaceState("business");
-          } else {
-            setWorkspaceState("personal");
-          }
-        }
-        if (storedDark) {
-          const isDark = JSON.parse(storedDark);
-          setDarkModeState(isDark);
-          if (isDark) document.documentElement.classList.add("dark");
-        }
-        if (storedPrivacy) setPrivacyMaskState(JSON.parse(storedPrivacy));
-        const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
-        if (storedAuth) {
-          try {
-            const parsedAuth = JSON.parse(storedAuth);
-            if (
-              parsedAuth &&
-              parsedAuth.email &&
-              parsedAuth.email.toLowerCase() === AUTHORIZED_USER.email.toLowerCase()
-            ) {
-              setIsAuthenticated(true);
-              setCurrentUser(parsedAuth);
-            }
-          } catch {}
-        }
-      } catch {
-        // Ignore storage read errors
-      } finally {
-        setIsHydrated(true);
       }
-    }, 0);
+      if (storedTxs) {
+        const parsed = JSON.parse(storedTxs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach((t: Transaction) => {
+            if (t.currency === "USD" || !t.currency) t.currency = "PHP";
+          });
+          setTransactions(parsed);
+        }
+      }
+      if (storedInvoices) {
+        const parsed = JSON.parse(storedInvoices);
+        if (Array.isArray(parsed) && parsed.length > 0) setInvoices(parsed);
+      }
+      if (storedBudgets) {
+        try {
+          const parsed = JSON.parse(storedBudgets);
+          if (Array.isArray(parsed) && parsed.length > 0) setRawBudgets(parsed);
+        } catch {}
+      }
+      const storedDismissed = localStorage.getItem(STORAGE_KEYS.DISMISSED_BUDGETS);
+      if (storedDismissed) {
+        try {
+          const parsed = JSON.parse(storedDismissed);
+          if (Array.isArray(parsed)) setDismissedBudgetCategories(parsed);
+        } catch {}
+      }
+      if (storedVendorBills) setVendorBills(JSON.parse(storedVendorBills));
+      if (storedSubs) setSubscriptions(JSON.parse(storedSubs));
+      if (storedChat) setChatMessages(JSON.parse(storedChat));
+      if (storedSettings) {
+        const parsed = JSON.parse(storedSettings);
+        if (!parsed.currency || parsed.currency === "USD") {
+          parsed.currency = "PHP";
+        }
+        setSettings(parsed);
+      }
+      if (storedWs) {
+        if (storedWs === "business") {
+          setWorkspaceState("business");
+        } else {
+          setWorkspaceState("personal");
+        }
+      }
+      if (storedDark) {
+        const isDark = JSON.parse(storedDark);
+        setDarkModeState(isDark);
+        if (isDark) document.documentElement.classList.add("dark");
+      }
+      if (storedPrivacy) setPrivacyMaskState(JSON.parse(storedPrivacy));
+      const storedAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
+      if (storedAuth) {
+        try {
+          const parsedAuth = JSON.parse(storedAuth);
+          if (
+            parsedAuth &&
+            parsedAuth.email &&
+            parsedAuth.email.toLowerCase() === AUTHORIZED_USER.email.toLowerCase()
+          ) {
+            setIsAuthenticated(true);
+            setCurrentUser(parsedAuth);
+          }
+        } catch {}
+      }
+    } catch {
+      // Ignore storage read errors
+    } finally {
+      setIsHydrated(true);
+    }
 
     // Verify session with authentication API
     fetch("/api/auth/session")
@@ -385,55 +386,186 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      .catch(() => {
-        // Network fallback
-      })
+      .catch(() => {})
       .finally(() => {
         setIsAuthChecking(false);
       });
 
-    // Hydrate directly from SQLite database API (canonical authority)
+    // Hydrate directly from SQLite database API with smart bidirectional merge
     fetch("/api/data")
       .then((res) => res.json())
       .then((data) => {
         if (data && data.status === "ok") {
-          // Only overwrite client state if server returned non-empty arrays (preserves local cache on serverless fresh starts)
-          if (Array.isArray(data.accounts) && data.accounts.length > 0) {
-            setAccounts(data.accounts);
+          // 1. Accounts bidirectional merge
+          if (Array.isArray(data.accounts)) {
+            setAccounts((prevAccounts) => {
+              if (data.accounts.length === 0 && prevAccounts.length === 0) {
+                return [];
+              }
+              const serverMap = new Map(data.accounts.map((a: FinancialAccount) => [a.id, a]));
+              const merged: FinancialAccount[] = [...data.accounts];
+              const missingOnServer: FinancialAccount[] = [];
+
+              for (const clientAcc of prevAccounts) {
+                if (!serverMap.has(clientAcc.id)) {
+                  merged.push(clientAcc);
+                  missingOnServer.push(clientAcc);
+                }
+              }
+
+              // Sync any missing accounts back to SQLite in background
+              missingOnServer.forEach((acc) => {
+                fetch("/api/accounts", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(acc),
+                }).catch(() => {});
+              });
+
+              return merged;
+            });
           }
-          if (Array.isArray(data.transactions) && data.transactions.length > 0) {
-            setTransactions(data.transactions);
+
+          // 2. Transactions bidirectional merge
+          if (Array.isArray(data.transactions)) {
+            setTransactions((prevTxs) => {
+              if (data.transactions.length === 0 && prevTxs.length === 0) {
+                return [];
+              }
+              const serverMap = new Map(data.transactions.map((t: Transaction) => [t.id, t]));
+              const merged: Transaction[] = [...data.transactions];
+              const missingOnServer: Transaction[] = [];
+
+              for (const clientTx of prevTxs) {
+                if (!serverMap.has(clientTx.id)) {
+                  merged.push(clientTx);
+                  missingOnServer.push(clientTx);
+                }
+              }
+
+              missingOnServer.forEach((tx) => {
+                fetch("/api/transactions", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(tx),
+                }).catch(() => {});
+              });
+
+              merged.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+              return merged;
+            });
           }
-          if (Array.isArray(data.budgets) && data.budgets.length > 0) {
-            setRawBudgets(data.budgets);
+
+          // 3. Budgets merge (filter out auto-budgets from rawBudgets)
+          if (Array.isArray(data.budgets)) {
+            setRawBudgets((prevBudgets) => {
+              const serverBudgets = data.budgets.filter(
+                (b: BudgetEnvelope) => !b.id.startsWith("b-auto-")
+              );
+              const serverCatMap = new Map(
+                serverBudgets.map((b: BudgetEnvelope) => [b.category.toLowerCase().trim(), b])
+              );
+              const merged: BudgetEnvelope[] = [...serverBudgets];
+              const missingOnServer: BudgetEnvelope[] = [];
+
+              for (const clientB of prevBudgets) {
+                if (clientB.id.startsWith("b-auto-")) continue;
+                const catKey = clientB.category.toLowerCase().trim();
+                if (!serverCatMap.has(catKey)) {
+                  merged.push(clientB);
+                  missingOnServer.push(clientB);
+                }
+              }
+
+              missingOnServer.forEach((b) => {
+                fetch("/api/budgets", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ category: b.category, monthlyLimit: b.monthlyLimit, id: b.id }),
+                }).catch(() => {});
+              });
+
+              return merged;
+            });
           }
-          if (Array.isArray(data.invoices) && data.invoices.length > 0) {
-            setInvoices(data.invoices);
+
+          // 4. Invoices bidirectional merge
+          if (Array.isArray(data.invoices)) {
+            setInvoices((prevInvoices) => {
+              if (data.invoices.length === 0 && prevInvoices.length === 0) {
+                return [];
+              }
+              const serverMap = new Map(data.invoices.map((i: Invoice) => [i.id, i]));
+              const merged: Invoice[] = [...data.invoices];
+              const missingOnServer: Invoice[] = [];
+
+              for (const clientInv of prevInvoices) {
+                if (!serverMap.has(clientInv.id)) {
+                  merged.push(clientInv);
+                  missingOnServer.push(clientInv);
+                }
+              }
+
+              missingOnServer.forEach((inv) => {
+                fetch("/api/invoices", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(inv),
+                }).catch(() => {});
+              });
+
+              merged.sort((a, b) => (b.issueDate || "").localeCompare(a.issueDate || ""));
+              return merged;
+            });
           }
-          if (data.settings && (data.settings.personalName || data.settings.businessName)) {
-            setSettings((prev) => ({ ...prev, ...data.settings }));
+
+          // 5. Settings merge
+          if (data.settings && (data.settings.personalName || data.settings.businessName || data.settings.currency)) {
+            setSettings((prev) => ({
+              ...prev,
+              ...data.settings,
+              personalName: data.settings.personalName || prev.personalName,
+              businessName: data.settings.businessName || prev.businessName,
+              currency: data.settings.currency || prev.currency || "PHP",
+            }));
           }
         }
       })
       .catch((err) => {
         console.warn("[FinanceContext] SQLite data sync:", err);
       });
-
-    return () => clearTimeout(timer);
   }, []);
 
-  // Save to localStorage whenever state updates
+  // Save to localStorage whenever state updates, guarded against race conditions
   useEffect(() => {
     if (!isHydrated) return;
+    if (isExplicitClearRef.current) return;
+
     try {
-      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
-      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
-      localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
-      localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(rawBudgets));
-      localStorage.setItem(STORAGE_KEYS.VENDOR_BILLS, JSON.stringify(vendorBills));
-      localStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(subscriptions));
-      localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(chatMessages));
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      if (accounts.length > 0 || !localStorage.getItem(STORAGE_KEYS.ACCOUNTS)) {
+        localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+      }
+      if (transactions.length > 0 || !localStorage.getItem(STORAGE_KEYS.TRANSACTIONS)) {
+        localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
+      }
+      if (invoices.length > 0 || !localStorage.getItem(STORAGE_KEYS.INVOICES)) {
+        localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
+      }
+      if (rawBudgets.length > 0 || !localStorage.getItem(STORAGE_KEYS.BUDGETS)) {
+        localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(rawBudgets));
+      }
+      if (vendorBills.length > 0 || !localStorage.getItem(STORAGE_KEYS.VENDOR_BILLS)) {
+        localStorage.setItem(STORAGE_KEYS.VENDOR_BILLS, JSON.stringify(vendorBills));
+      }
+      if (subscriptions.length > 0 || !localStorage.getItem(STORAGE_KEYS.SUBSCRIPTIONS)) {
+        localStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(subscriptions));
+      }
+      if (chatMessages.length > 0 || !localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES)) {
+        localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(chatMessages));
+      }
+      if (settings.personalName || settings.businessName || !localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      }
     } catch {
       // Storage quota or disabled
     }
@@ -470,6 +602,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
+    fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newSettings),
+    }).catch((err) => console.warn("Failed to persist settings to DB:", err));
   };
 
   // Dynamically computed financial metrics (Zero hardcoded constants!)
@@ -627,19 +764,36 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const addAccount = (acc: Omit<FinancialAccount, "id">) => {
     const newAcc: FinancialAccount = {
       ...acc,
-      id: `acc-${Date.now()}`,
+      id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      currency: acc.currency || settings.currency || "PHP",
     };
     setAccounts((prev) => [...prev, newAcc]);
+
+    fetch("/api/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newAcc),
+    }).catch((err) => console.warn("Failed to persist account:", err));
   };
 
   const updateAccount = (id: string, updated: Partial<FinancialAccount>) => {
     setAccounts((prev) =>
       prev.map((acc) => (acc.id === id ? { ...acc, ...updated } : acc))
     );
+
+    fetch("/api/accounts", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updated }),
+    }).catch((err) => console.warn("Failed to update account in DB:", err));
   };
 
   const deleteAccount = (id: string) => {
     setAccounts((prev) => prev.filter((acc) => acc.id !== id));
+
+    fetch(`/api/accounts?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch((err) => console.warn("Failed to delete account from DB:", err));
   };
 
   // -------------------------------------------------------------
@@ -669,7 +823,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Persist to SQLite database if not already persisted by server
-    if (!skipDbPersist && !tx.id) {
+    if (!skipDbPersist) {
       fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -695,6 +849,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setTransactions((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updated } : t))
     );
+
+    fetch("/api/transactions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updated }),
+    }).catch((err) => console.warn("Failed to update transaction in DB:", err));
   };
 
   const deleteTransaction = (id: string) => {
@@ -738,7 +898,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     const total = subtotal + tax;
 
     const newInvoice: Invoice = {
-      id: `inv-${Date.now()}`,
+      id: `inv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       invoiceNumber: invData.invoiceNumber,
       clientName: invData.clientName,
       clientEmail: invData.clientEmail,
@@ -758,12 +918,24 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     };
 
     setInvoices((prev) => [newInvoice, ...prev]);
+
+    fetch("/api/invoices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newInvoice),
+    }).catch((err) => console.warn("Failed to persist invoice to DB:", err));
   };
 
   const updateInvoice = (id: string, updated: Partial<Invoice>) => {
     setInvoices((prev) =>
       prev.map((inv) => (inv.id === id ? { ...inv, ...updated } : inv))
     );
+
+    fetch("/api/invoices", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updated }),
+    }).catch((err) => console.warn("Failed to update invoice in DB:", err));
   };
 
   const updateInvoiceStatus = (id: string, newStatus: InvoiceStatus) => {
@@ -792,10 +964,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         return inv;
       })
     );
+
+    fetch("/api/invoices", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status: newStatus }),
+    }).catch((err) => console.warn("Failed to update invoice status in DB:", err));
   };
 
   const deleteInvoice = (id: string) => {
     setInvoices((prev) => prev.filter((i) => i.id !== id));
+
+    fetch(`/api/invoices?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch((err) => console.warn("Failed to delete invoice from DB:", err));
   };
 
   // -------------------------------------------------------------
@@ -1016,6 +1198,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearAllData = () => {
+    isExplicitClearRef.current = true;
     setAccounts([]);
     setTransactions([]);
     setInvoices([]);
