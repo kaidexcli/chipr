@@ -1,4 +1,4 @@
-export const DEFAULT_GROQ_MODEL = "groq/compound-mini";
+export const DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b";
 
 export interface GroqModelOption {
   id: string;
@@ -9,32 +9,21 @@ export interface GroqModelOption {
 }
 
 /**
- * Currently active and verified Groq models (Fall 2026 / Groq LPU platform).
+ * Currently active and verified Groq free-tier & open-source models (Fall 2026 / Groq LPU platform).
+ * Compound models are deprecated; GPT-OSS and Qwen 3.8 provide fast, reliable, open-source inference.
  */
 export const AVAILABLE_GROQ_MODELS: GroqModelOption[] = [
   {
-    id: "groq/compound-mini",
-    name: "Groq Compound Mini",
-    description: "Ultra-fast LPU inference, exceptional for real-time ledger & financial tracking",
-    contextWindow: 128000,
-    recommended: true,
-  },
-  {
     id: "openai/gpt-oss-120b",
     name: "OpenAI GPT-OSS 120B",
-    description: "Flagship 120B open-weights model for deep financial analysis & tax strategy",
+    description: "Flagship 120B open-weights model for deep financial analysis, tax strategy & forecasting",
     contextWindow: 128000,
+    recommended: true,
   },
   {
     id: "qwen/qwen3.8-27b",
     name: "Qwen 3.8 27B",
     description: "High-accuracy multi-task reasoning for P&L, burn rate, and financial ledgers",
-    contextWindow: 128000,
-  },
-  {
-    id: "groq/compound",
-    name: "Groq Compound",
-    description: "Agentic reasoning system with tool-assisted financial calculations",
     contextWindow: 128000,
   },
   {
