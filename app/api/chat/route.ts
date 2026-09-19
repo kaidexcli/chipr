@@ -204,8 +204,15 @@ export async function POST(req: NextRequest) {
         });
       } catch (streamInitError: unknown) {
         const err = streamInitError as { status?: number; message?: string };
-        if (err.status === 404 && activeModel !== DEFAULT_GROQ_MODEL) {
-          console.warn(`[Groq] Model ${activeModel} failed with 404, retrying with ${DEFAULT_GROQ_MODEL}`);
+        const isModelErr =
+          err.status === 404 ||
+          err.status === 400 ||
+          err.message?.toLowerCase().includes("decommission") ||
+          err.message?.toLowerCase().includes("deprecat") ||
+          err.message?.toLowerCase().includes("model");
+
+        if (isModelErr && activeModel !== DEFAULT_GROQ_MODEL) {
+          console.warn(`[Groq] Model ${activeModel} failed (${err.status || err.message}), retrying with ${DEFAULT_GROQ_MODEL}`);
           completionStream = await groq.chat.completions.create({
             model: DEFAULT_GROQ_MODEL,
             messages: formattedMessages,
@@ -289,8 +296,15 @@ export async function POST(req: NextRequest) {
         stream: false,
       });
     } catch (err: unknown) {
-      const error = err as { status?: number };
-      if (error.status === 404 && activeModel !== DEFAULT_GROQ_MODEL) {
+      const error = err as { status?: number; message?: string };
+      const isModelErr =
+        error.status === 404 ||
+        error.status === 400 ||
+        error.message?.toLowerCase().includes("decommission") ||
+        error.message?.toLowerCase().includes("deprecat") ||
+        error.message?.toLowerCase().includes("model");
+
+      if (isModelErr && activeModel !== DEFAULT_GROQ_MODEL) {
         completion = await groq.chat.completions.create({
           model: DEFAULT_GROQ_MODEL,
           messages: formattedMessages,
