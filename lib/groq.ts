@@ -48,12 +48,19 @@ export function isGroqConfigured(): boolean {
 /**
  * Resolves the active Groq model:
  * Checks requestedModel, process.env.GROQ_MODEL, NEXT_PUBLIC_GROQ_MODEL, database, and defaults.
+ * Automatically filters out deprecated models (e.g. compound or llama).
  */
 export function getActiveGroqModel(requestedModel?: string): string {
+  const isDeprecatedOrInvalid = (m?: string | null): boolean => {
+    if (!m) return true;
+    const clean = m.trim().toLowerCase();
+    return clean.includes("llama") || clean.includes("compound");
+  };
+
   if (
     requestedModel &&
     requestedModel.trim() &&
-    !requestedModel.includes("llama")
+    !isDeprecatedOrInvalid(requestedModel)
   ) {
     return requestedModel.trim().replace(/^["']|["']$/g, "");
   }
@@ -65,14 +72,14 @@ export function getActiveGroqModel(requestedModel?: string): string {
   if (
     envModel &&
     envModel.trim() &&
-    !envModel.includes("llama")
+    !isDeprecatedOrInvalid(envModel)
   ) {
     return envModel.trim().replace(/^["']|["']$/g, "");
   }
 
   try {
     const dbModel = getDbAppConfig("groq_model");
-    if (dbModel && dbModel.trim() && !dbModel.includes("llama")) {
+    if (dbModel && dbModel.trim() && !isDeprecatedOrInvalid(dbModel)) {
       return dbModel.trim().replace(/^["']|["']$/g, "");
     }
   } catch {}
@@ -141,17 +148,21 @@ export async function verifyGroqApiKey(
 /**
  * Resolves a model ID to an active model on Groq.
  * If the requested model is deprecated or not found, it automatically
- * maps to a supported chat model to prevent 404 errors.
+ * maps to a supported chat model to prevent 404/400 errors.
  */
 export async function resolveActiveModel(
   client: Groq,
   requestedModel?: string
 ): Promise<string> {
   const target = (requestedModel || "").trim();
+  const isDeprecated = (m: string) => {
+    const lower = m.toLowerCase();
+    return lower.includes("llama") || lower.includes("compound");
+  };
 
   // Known active models that we know work directly
   const knownActive = AVAILABLE_GROQ_MODELS.map((m) => m.id);
-  if (target && knownActive.includes(target)) {
+  if (target && knownActive.includes(target) && !isDeprecated(target)) {
     return target;
   }
 
@@ -159,8 +170,8 @@ export async function resolveActiveModel(
     const modelList = await client.models.list();
     const availableIds = modelList.data.map((m) => m.id);
 
-    // If requested model exists verbatim, use it
-    if (target && availableIds.includes(target)) {
+    // If requested model exists verbatim and is not deprecated, use it
+    if (target && availableIds.includes(target) && !isDeprecated(target)) {
       return target;
     }
 
@@ -171,9 +182,13 @@ export async function resolveActiveModel(
       }
     }
 
-    // Fallback to any non-whisper, non-guard model
+    // Fallback to any non-whisper, non-guard, non-orpheus, non-deprecated chat model
     const genericChatModel = availableIds.find(
-      (id) => !id.includes("whisper") && !id.includes("guard")
+      (id) =>
+        !id.includes("whisper") &&
+        !id.includes("guard") &&
+        !id.includes("orpheus") &&
+        !isDeprecated(id)
     );
     if (genericChatModel) {
       return genericChatModel;
