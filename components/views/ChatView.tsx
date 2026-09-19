@@ -973,10 +973,10 @@ Your financial workspace currently has:
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. Input Console */}
+      {/* 3. Input Console / Unified Rounded Chatbox */}
       <div className="p-3 sm:p-4 pt-0 shrink-0 space-y-1.5 bg-transparent">
-        <div className="relative flex flex-col rounded-2xl border border-border-subtle bg-canvas focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 transition-all shadow-xs p-2.5 sm:p-3">
-          {/* Textarea */}
+        <div className="relative flex flex-col rounded-2xl sm:rounded-3xl border border-border-subtle bg-canvas focus-within:border-brand/60 focus-within:ring-2 focus-within:ring-brand/20 transition-all shadow-xs p-2 sm:p-3">
+          {/* Textarea - Borderless, Seamless, No Sharp Edges */}
           <textarea
             ref={textareaRef}
             rows={2}
@@ -984,15 +984,16 @@ Your financial workspace currently has:
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             placeholder="Type your expense here (e.g. 'Spent ₱450 on groceries', 'Bought clothes at Zara ₱1,850', 'Electric bill ₱2,400')..."
-            className="w-full bg-transparent p-1 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-[48px] max-h-[160px]"
+            className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 px-2 sm:px-2.5 pt-1.5 pb-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none min-h-[46px] max-h-[160px] leading-relaxed shadow-none"
+            style={{ outline: "none", border: "none", boxShadow: "none" }}
           />
 
-          {/* Bottom Action Row (Unified inside single input card) */}
-          <div className="flex items-center justify-between pt-2 border-t border-border-subtle/40">
+          {/* Bottom Action Row - Seamlessly integrated without harsh dividing border lines */}
+          <div className="flex items-center justify-between px-1.5 sm:px-2 pt-1">
             <div className="flex items-center gap-2">
               {/* Context Tag Pill */}
               <span
-                className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors ${
                   contextScope === "personal"
                     ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300"
                     : contextScope === "business"
@@ -1019,7 +1020,7 @@ Your financial workspace currently has:
                 className="text-[10px] text-text-muted hover:text-brand transition-colors font-mono hidden sm:inline-block cursor-pointer"
                 title="Change AI Model"
               >
-                {activeModelMeta.name}
+                {activeModelMeta.name.replace("OpenAI ", "")}
               </button>
 
               {inputValue.length > 0 && (
