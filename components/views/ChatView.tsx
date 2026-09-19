@@ -495,7 +495,7 @@ Your financial workspace currently has:
       {/* 1. Header Toolbar */}
       <div className="flex items-center justify-between px-3.5 sm:px-5 py-3 border-b border-border-subtle bg-surface/90 backdrop-blur-md shrink-0 gap-2">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand to-indigo-500 text-white shadow-xs shrink-0">
+          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-linear-to-tr from-brand to-indigo-500 text-white shadow-xs shrink-0">
             <SparklesIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </div>
           <div className="min-w-0">
@@ -739,7 +739,7 @@ Your financial workspace currently has:
               >
                 {/* Avatar */}
                 {isUser ? (
-                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-brand to-indigo-500 text-white font-bold text-xs shadow-xs shrink-0 mt-0.5">
+                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-linear-to-tr from-brand to-indigo-500 text-white font-bold text-xs shadow-xs shrink-0 mt-0.5">
                     {userInitials}
                   </div>
                 ) : (
@@ -777,7 +777,7 @@ Your financial workspace currently has:
 
                   {/* Bubble Content */}
                   <div
-                    className={`rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words ${
+                    className={`rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap wrap-break-word ${
                       isUser
                         ? "bg-brand text-white shadow-xs"
                         : isError
@@ -984,7 +984,7 @@ Your financial workspace currently has:
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             placeholder="Type your expense here (e.g. 'Spent ₱450 on groceries', 'Bought clothes at Zara ₱1,850', 'Electric bill ₱2,400')..."
-            className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 px-2 sm:px-2.5 pt-1.5 pb-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none min-h-[46px] max-h-[160px] leading-relaxed shadow-none"
+            className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 px-2 sm:px-2.5 pt-1.5 pb-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none min-h-11.5 max-h-40 leading-relaxed shadow-none"
             style={{ outline: "none", border: "none", boxShadow: "none" }}
           />
 
@@ -1112,7 +1112,7 @@ function renderFormattedMessage(content: string, isUser: boolean) {
       );
     }
 
-    // Numbered list item: 1. 2. etc.
+    // Numbered list item: 1. 2. and other
     const numberedMatch = line.match(/^([0-9]+\.)\s+(.*)$/);
     if (numberedMatch) {
       return (

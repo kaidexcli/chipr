@@ -400,7 +400,7 @@ export function DashboardView() {
               setEditingAccount(null);
               setIsAccountModalOpen(true);
             }}
-            className="group rounded-2xl border-2 border-dashed border-border-subtle hover:border-brand/60 bg-surface/40 hover:bg-brand/5 p-5 flex flex-col items-center justify-center gap-2 text-center transition-all duration-200 cursor-pointer min-h-[170px]"
+            className="group rounded-2xl border-2 border-dashed border-border-subtle hover:border-brand/60 bg-surface/40 hover:bg-brand/5 p-5 flex flex-col items-center justify-center gap-2 text-center transition-all duration-200 cursor-pointer min-h-42.5"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-canvas border border-border-subtle text-text-muted group-hover:text-brand group-hover:border-brand/40 transition-colors shadow-2xs">
               <PlusIcon className="w-5 h-5" />
