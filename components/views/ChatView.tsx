@@ -62,7 +62,12 @@ export function ChatView() {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(GROQ_MODEL_STORAGE);
-        if (stored && !stored.includes("llama")) {
+        if (
+          stored &&
+          !stored.includes("llama") &&
+          !stored.includes("compound") &&
+          AVAILABLE_GROQ_MODELS.some((m) => m.id === stored)
+        ) {
           return stored;
         }
         return DEFAULT_GROQ_MODEL;
@@ -90,10 +95,20 @@ export function ChatView() {
           if (typeof data.isConfigured === "boolean") {
             setIsGroqActive(data.isConfigured);
           }
-          if (data.model && !data.model.includes("llama")) {
+          if (
+            data.model &&
+            !data.model.includes("llama") &&
+            !data.model.includes("compound") &&
+            AVAILABLE_GROQ_MODELS.some((m) => m.id === data.model)
+          ) {
             setSelectedModel(data.model);
             try {
               localStorage.setItem(GROQ_MODEL_STORAGE, data.model);
+            } catch {}
+          } else {
+            setSelectedModel(DEFAULT_GROQ_MODEL);
+            try {
+              localStorage.setItem(GROQ_MODEL_STORAGE, DEFAULT_GROQ_MODEL);
             } catch {}
           }
         }
@@ -506,7 +521,7 @@ Your financial workspace currently has:
                 />
                 <span>
                   {isGroqActive
-                    ? `Groq: ${activeModelMeta.name.split(" ")[0]} ${activeModelMeta.name.split(" ")[1] || ""}`
+                    ? `Groq: ${activeModelMeta.name.replace("OpenAI ", "")}`
                     : "Configure Groq API"}
                 </span>
               </button>
