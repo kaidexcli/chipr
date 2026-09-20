@@ -150,7 +150,7 @@ const DEFAULT_BUDGET_ENVELOPES: BudgetEnvelope[] = [];
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const [workspace, setWorkspaceState] = useState<WorkspaceEntity>("personal");
+  const [workspace, setWorkspaceState] = useState<WorkspaceEntity>("business");
   const [privacyMask, setPrivacyMaskState] = useState<boolean>(false);
   const [darkMode, setDarkModeState] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<NavigationTab>("dashboard");
@@ -179,7 +179,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     taxIdMasked: "",
     currency: "PHP",
     fiscalYearStart: "January",
-    defaultWorkspace: "personal",
+    defaultWorkspace: "business",
     defaultPrivacyMask: false,
   });
 
@@ -336,11 +336,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setSettings(parsed);
       }
       if (storedWs) {
-        if (storedWs === "business") {
-          setWorkspaceState("business");
-        } else {
-          setWorkspaceState("personal");
-        }
+        setWorkspaceState(storedWs === "personal" ? "business" : (storedWs as WorkspaceEntity));
       }
       if (storedDark) {
         const isDark = JSON.parse(storedDark);
@@ -613,43 +609,34 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const metrics: FinancialMetrics = useMemo(() => {
     // 1. Personal calculation
     const personalAccounts = accounts.filter((a) => a.entity === "personal");
-    const personalAssets = personalAccounts
+    const totalAssets = accounts
       .filter((a) => a.balance > 0)
       .reduce((sum, a) => sum + a.balance, 0);
-    const personalLiabilities = personalAccounts
+    const totalLiabilities = accounts
       .filter((a) => a.balance < 0)
       .reduce((sum, a) => sum + Math.abs(a.balance), 0);
-    const netWorth = personalAssets - personalLiabilities;
+    const netWorth = totalAssets - totalLiabilities;
 
-    const personalTxs = transactions.filter((t) => t.entity === "personal");
-    const personalMonthlyInflow = personalTxs
+    const totalInflow = transactions
       .filter((t) => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
-    const personalMonthlyOutflow = personalTxs
+    const totalOutflow = transactions
       .filter((t) => t.amount < 0)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const savingsRate =
-      personalMonthlyInflow > 0
-        ? Math.max(
-            0,
-            ((personalMonthlyInflow - personalMonthlyOutflow) / personalMonthlyInflow) * 100
-          )
+      totalInflow > 0
+        ? Math.max(0, ((totalInflow - totalOutflow) / totalInflow) * 100)
         : 0;
 
     // 2. Business calculation
-    const businessAccounts = accounts.filter((a) => a.entity === "business");
-    const businessLiquidCash = businessAccounts
+    const businessLiquidCash = accounts
       .filter((a) => a.type === "checking" || a.type === "savings")
       .reduce((sum, a) => sum + Math.max(0, a.balance), 0);
-    const businessAssets = businessAccounts
-      .filter((a) => a.balance > 0)
-      .reduce((sum, a) => sum + a.balance, 0);
-    const businessLiabilities = businessAccounts
-      .filter((a) => a.balance < 0)
-      .reduce((sum, a) => sum + Math.abs(a.balance), 0);
-    const businessEquity = businessAssets - businessLiabilities;
+    const businessAssets = totalAssets;
+    const businessLiabilities = totalLiabilities;
+    const businessEquity = netWorth;
 
-    const businessTxs = transactions.filter((t) => t.entity === "business");
+    const businessTxs = transactions;
     const grossRevenue = businessTxs
       .filter((t) => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
@@ -729,10 +716,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
     return {
       netWorth,
-      totalAssets: personalAssets,
-      totalLiabilities: personalLiabilities,
-      personalMonthlyInflow,
-      personalMonthlyOutflow,
+      totalAssets,
+      totalLiabilities,
+      personalMonthlyInflow: totalInflow,
+      personalMonthlyOutflow: totalOutflow,
       savingsRate,
       grossRevenue,
       cogs,
@@ -765,6 +752,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     const newAcc: FinancialAccount = {
       ...acc,
       id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      entity: acc.entity || "business",
       currency: acc.currency || settings.currency || "PHP",
     };
     setAccounts((prev) => [...prev, newAcc]);
@@ -804,13 +792,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     skipDbPersist = false
   ) => {
     // Resolve category using comprehensive financial taxonomy
-    const finalCategory = resolveCategory(tx.category, tx.merchant, tx.entity);
+    const finalCategory = resolveCategory(tx.category, tx.merchant, tx.entity || "business");
 
     const txCurrency = tx.currency || settings.currency || "PHP";
 
     const newTx: Transaction = {
       ...tx,
       id: tx.id || `tx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      entity: tx.entity || "business",
       category: finalCategory,
       currency: txCurrency,
     };
@@ -1166,7 +1155,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       taxIdMasked: "XX-XXX8942",
       currency: "PHP",
       fiscalYearStart: "January",
-      defaultWorkspace: "personal",
+      defaultWorkspace: "business",
       defaultPrivacyMask: false,
     });
     setDismissedBudgetCategories([]);
@@ -1217,7 +1206,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       taxIdMasked: "",
       currency: "PHP",
       fiscalYearStart: "January",
-      defaultWorkspace: "personal",
+      defaultWorkspace: "business",
       defaultPrivacyMask: false,
     });
     localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
