@@ -31,7 +31,7 @@ export function NewTransactionModal({
   const { accounts, addTransaction, updateTransaction, settings } = useFinance();
 
   const [type, setType] = useState<"expense" | "income">("expense");
-  const [entity, setEntity] = useState<"personal" | "business">("personal");
+  const [entity, setEntity] = useState<"personal" | "business">("business");
   const [merchant, setMerchant] = useState("");
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
@@ -51,7 +51,7 @@ export function NewTransactionModal({
     setPrevEditingTx(editingTx);
     if (editingTx) {
       setType(editingTx.amount < 0 ? "expense" : "income");
-      setEntity(editingTx.entity);
+      setEntity(editingTx.entity || "business");
       setMerchant(editingTx.merchant);
       setCategory(editingTx.category);
       setAmount(Math.abs(editingTx.amount).toString());
@@ -67,7 +67,7 @@ export function NewTransactionModal({
       setNote(editingTx.note || "");
     } else {
       setType("expense");
-      setEntity("personal");
+      setEntity("business");
       setMerchant("");
       setCategory("");
       setAmount("");
@@ -160,69 +160,34 @@ export function NewTransactionModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
-          {/* Income vs Expense & Entity Selector */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Flow Direction
-              </label>
-              <div className="flex rounded-xl border border-border-subtle bg-canvas p-1">
-                <button
-                  type="button"
-                  onClick={() => setType("expense")}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                    type === "expense"
-                      ? "bg-outflow-subtle text-outflow shadow-xs"
-                      : "text-text-muted hover:text-text-primary"
-                  }`}
-                >
-                  - Outflow
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setType("income")}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                    type === "income"
-                      ? "bg-inflow-subtle text-inflow shadow-xs"
-                      : "text-text-muted hover:text-text-primary"
-                  }`}
-                >
-                  + Inflow
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Entity Scope
-              </label>
-              <div className="flex rounded-xl border border-border-subtle bg-canvas p-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEntity("personal");
-                    setIsTaxDeductible(false);
-                  }}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                    entity === "personal"
-                      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 shadow-xs"
-                      : "text-text-muted hover:text-text-primary"
-                  }`}
-                >
-                  Personal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEntity("business")}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer truncate ${
-                    entity === "business"
-                      ? "bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300 shadow-xs"
-                      : "text-text-muted hover:text-text-primary"
-                  }`}
-                >
-                  {settings.businessName || "Business"}
-                </button>
-              </div>
+          {/* Flow Direction Selector */}
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1">
+              Transaction Flow
+            </label>
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-border-subtle bg-canvas p-1">
+              <button
+                type="button"
+                onClick={() => setType("expense")}
+                className={`py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center ${
+                  type === "expense"
+                    ? "bg-outflow-subtle text-outflow shadow-xs font-bold"
+                    : "text-text-muted hover:text-text-primary"
+                }`}
+              >
+                - Operating Outflow / Expense
+              </button>
+              <button
+                type="button"
+                onClick={() => setType("income")}
+                className={`py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center ${
+                  type === "income"
+                    ? "bg-inflow-subtle text-inflow shadow-xs font-bold"
+                    : "text-text-muted hover:text-text-primary"
+                }`}
+              >
+                + Client Inflow / Revenue
+              </button>
             </div>
           </div>
 
@@ -335,7 +300,7 @@ export function NewTransactionModal({
               >
                 {accounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.institution}) • {acc.entity.toUpperCase()}
+                    {acc.name} ({acc.institution})
                   </option>
                 ))}
               </select>
@@ -347,7 +312,7 @@ export function NewTransactionModal({
           </div>
 
           {/* Business Deductibility & Schedule C options */}
-          {entity === "business" && type === "expense" && (
+          {type === "expense" && (
             <div className="rounded-xl border border-border-subtle bg-canvas p-3.5 space-y-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

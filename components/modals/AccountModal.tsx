@@ -20,7 +20,6 @@ export function AccountModal({
 
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("checking");
-  const [entity, setEntity] = useState<"personal" | "business">("personal");
   const [balance, setBalance] = useState("");
   const [institution, setInstitution] = useState("");
   const [accountNumberMasked, setAccountNumberMasked] = useState("•••• ");
@@ -29,14 +28,12 @@ export function AccountModal({
     if (editingAccount) {
       setName(editingAccount.name);
       setType(editingAccount.type);
-      setEntity(editingAccount.entity);
       setBalance(editingAccount.balance.toString());
       setInstitution(editingAccount.institution);
       setAccountNumberMasked(editingAccount.accountNumberMasked);
     } else {
       setName("");
       setType("checking");
-      setEntity("personal");
       setBalance("0.00");
       setInstitution("");
       setAccountNumberMasked("•••• ");
@@ -54,7 +51,7 @@ export function AccountModal({
       updateAccount(editingAccount.id, {
         name: name.trim(),
         type,
-        entity,
+        entity: editingAccount.entity || "business",
         balance: parsedBalance,
         institution: institution.trim() || "Financial Institution",
         accountNumberMasked: accountNumberMasked.trim() || "••••",
@@ -63,7 +60,7 @@ export function AccountModal({
       addAccount({
         name: name.trim(),
         type,
-        entity,
+        entity: "business",
         balance: parsedBalance,
         institution: institution.trim() || "Financial Institution",
         accountNumberMasked: accountNumberMasked.trim() || "••••",
@@ -108,37 +105,6 @@ export function AccountModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
-          {/* Entity Scope Toggle */}
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary mb-1">
-              Account Entity
-            </label>
-            <div className="flex rounded-xl border border-border-subtle bg-canvas p-1">
-              <button
-                type="button"
-                onClick={() => setEntity("personal")}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                  entity === "personal"
-                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 shadow-xs"
-                    : "text-text-muted hover:text-text-primary"
-                }`}
-              >
-                Personal
-              </button>
-              <button
-                type="button"
-                onClick={() => setEntity("business")}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                  entity === "business"
-                    ? "bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300 shadow-xs"
-                    : "text-text-muted hover:text-text-primary"
-                }`}
-              >
-                {settings.businessName || "Business"}
-              </button>
-            </div>
-          </div>
-
           {/* Account Name */}
           <div>
             <label className="block text-xs font-semibold text-text-secondary mb-1">
@@ -147,7 +113,7 @@ export function AccountModal({
             <input
               type="text"
               required
-              placeholder="e.g. Main Operating Checking, Emergency HYSA"
+              placeholder="e.g. Main Operating Checking, Treasury Reserve"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl border border-border-subtle bg-canvas px-3.5 py-2 text-xs text-text-primary placeholder:text-text-muted focus:border-brand focus:outline-none"
@@ -168,8 +134,8 @@ export function AccountModal({
                 <option value="checking">Checking</option>
                 <option value="savings">Savings / HYSA</option>
                 <option value="credit">Credit Card</option>
-                <option value="investment">Investment / IRA</option>
-                <option value="loan">Loan / Mortgage</option>
+                <option value="investment">Investment / Treasury</option>
+                <option value="loan">Loan / Line of Credit</option>
               </select>
             </div>
             <div>
@@ -178,7 +144,7 @@ export function AccountModal({
               </label>
               <input
                 type="text"
-                placeholder="e.g. Chase, Mercury, Vanguard"
+                placeholder="e.g. BDO, BPI, Mercury, Chase"
                 value={institution}
                 onChange={(e) => setInstitution(e.target.value)}
                 className="w-full rounded-xl border border-border-subtle bg-canvas px-3.5 py-2 text-xs text-text-primary placeholder:text-text-muted focus:border-brand focus:outline-none"
@@ -190,7 +156,7 @@ export function AccountModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Current Balance (₱)
+                Current Balance
               </label>
               <input
                 type="number"
@@ -202,7 +168,7 @@ export function AccountModal({
                 className="w-full rounded-xl border border-border-subtle bg-canvas px-3.5 py-2 text-xs font-mono text-text-primary focus:border-brand focus:outline-none"
               />
               <span className="text-[10px] text-text-muted">
-                {type === "credit" || type === "loan" ? "Negative for debt" : "Positive for liquid/assets"}
+                {type === "credit" || type === "loan" ? "Negative for liability/debt" : "Positive for liquid/assets"}
               </span>
             </div>
             <div>
