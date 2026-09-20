@@ -50,9 +50,8 @@ export function ProfileView() {
   const [taxIdMasked, setTaxIdMasked] = useState(settings.taxIdMasked || "");
   const [currency, setCurrency] = useState(settings.currency || "PHP");
   const [fiscalYearStart, setFiscalYearStart] = useState(settings.fiscalYearStart || "January");
-
   const [defaultWorkspace, setDefaultWorkspace] = useState<WorkspaceEntity>(
-    settings.defaultWorkspace || "personal"
+    settings.defaultWorkspace || "business"
   );
   const [defaultPrivacyMask, setDefaultPrivacyMask] = useState(
     settings.defaultPrivacyMask || false
@@ -72,7 +71,7 @@ export function ProfileView() {
     setTaxIdMasked(settings.taxIdMasked || "");
     setCurrency(settings.currency || "PHP");
     setFiscalYearStart(settings.fiscalYearStart || "January");
-    setDefaultWorkspace(settings.defaultWorkspace || "personal");
+    setDefaultWorkspace("business");
     setDefaultPrivacyMask(settings.defaultPrivacyMask || false);
   }
 
@@ -286,7 +285,7 @@ export function ProfileView() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Section 1: Personal Profile Details */}
+        {/* Section 1: Operator Profile Details */}
         <div className="rounded-2xl border border-border-subtle bg-surface p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2.5 border-b border-border-subtle pb-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
@@ -294,10 +293,10 @@ export function ProfileView() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-text-primary">
-                Personal Identity & Contact
+                Operator & Account Owner
               </h3>
               <p className="text-xs text-text-muted">
-                Used for your personal ledger, cards, and household wealth tracking
+                Primary contact details for executive reporting, invoices, and operations
               </p>
             </div>
           </div>
@@ -305,18 +304,18 @@ export function ProfileView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Full Legal Name
+                Full Legal Name / Signatory
               </label>
               <input
                 type="text"
                 required
                 value={personalName}
                 onChange={(e) => setPersonalName(e.target.value)}
-                placeholder="e.g. John Doe"
+                placeholder="e.g. Benedict Fusin"
                 className="w-full rounded-xl border border-border-subtle bg-canvas px-3.5 py-2 text-xs text-text-primary placeholder:text-text-muted focus:border-brand focus:outline-none"
               />
               <span className="text-[10px] text-text-muted mt-1 block">
-                Displayed as the primary Account Owner on your digital card pass.
+                Displayed as the primary authorized operator and signatory on business statements.
               </span>
             </div>
 
@@ -459,10 +458,10 @@ export function ProfileView() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-text-primary">
-                Preferences & Anti-Commingling
+                Preferences & Reporting
               </h3>
               <p className="text-xs text-text-muted">
-                Control default views, privacy shield, and theme appearance
+                Control fiscal calendar, balance privacy shield, and theme appearance
               </p>
             </div>
           </div>
@@ -470,15 +469,17 @@ export function ProfileView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Default Workspace Scope
+                Fiscal Year Start
               </label>
               <select
-                value={defaultWorkspace}
-                onChange={(e) => setDefaultWorkspace(e.target.value as WorkspaceEntity)}
+                value={fiscalYearStart}
+                onChange={(e) => setFiscalYearStart(e.target.value)}
                 className="w-full rounded-xl border border-border-subtle bg-canvas px-3.5 py-2 text-xs text-text-primary focus:border-brand focus:outline-none"
               >
-                <option value="personal">Personal Household Finance</option>
-                <option value="business">Commercial Operations ({businessName || "Business"})</option>
+                <option value="January">January (Calendar Year)</option>
+                <option value="April">April (Q2 Start)</option>
+                <option value="July">July (Mid-Year)</option>
+                <option value="October">October (Q4 / Federal)</option>
               </select>
             </div>
 

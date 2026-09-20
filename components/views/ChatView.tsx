@@ -43,13 +43,8 @@ export function ChatView() {
     updateSettings,
   } = useFinance();
 
-  // Selected context scope for prompts: "personal" | "business" | "all"
-  const [contextScope, setContextScope] = useState<ChatContextScope>(workspace);
-  const [prevWorkspace, setPrevWorkspace] = useState(workspace);
-  if (workspace !== prevWorkspace) {
-    setPrevWorkspace(workspace);
-    setContextScope(workspace);
-  }
+  // Unified commercial context scope
+  const contextScope: ChatContextScope = "business";
 
   const [inputValue, setInputValue] = useState("");
   const [isThinking, setIsThinking] = useState(false);
@@ -534,48 +529,16 @@ Your financial workspace currently has:
 
         {/* Action Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Context Scope Switcher Pill */}
-          <div className="flex items-center rounded-xl border border-border-subtle bg-canvas p-0.5 text-[11px] font-semibold">
-            <button
-              type="button"
-              onClick={() => setContextScope("personal")}
-              className={`rounded-lg px-2 sm:px-2.5 py-1 transition-all cursor-pointer flex items-center gap-1 ${
-                contextScope === "personal"
-                  ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-              title="Scope AI context to Personal finances"
-            >
-              <UserIcon className="w-3 h-3 shrink-0" />
-              <span className="hidden md:inline">Personal</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setContextScope("business")}
-              className={`rounded-lg px-2 sm:px-2.5 py-1 transition-all cursor-pointer flex items-center gap-1 ${
-                contextScope === "business"
-                  ? "bg-sky-600 text-white shadow-xs font-bold"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-              title="Scope AI context to Business operations"
-            >
-              <BuildingOfficeIcon className="w-3 h-3 shrink-0" />
-              <span className="hidden md:inline">Business</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setContextScope("all")}
-              className={`rounded-lg px-2 sm:px-2.5 py-1 transition-all cursor-pointer flex items-center gap-1 ${
-                contextScope === "all"
-                  ? "bg-brand text-white shadow-xs font-bold"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-              title="Scope AI context across all portfolio entities"
-            >
-              <ArrowsExchangeIcon className="w-3 h-3 shrink-0" />
-              <span className="hidden md:inline">Unified</span>
-            </button>
-          </div>
+          {/* Active Model Quick Badge */}
+          <button
+            type="button"
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border-subtle bg-canvas px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-raised transition-colors cursor-pointer"
+            title="Configure Groq AI Model & Key"
+          >
+            <ZapIcon className="w-3.5 h-3.5 text-amber-500" />
+            <span className="font-semibold text-text-primary">{activeModelMeta.name.replace("OpenAI ", "")}</span>
+          </button>
 
           {/* Groq Settings Button */}
           <button
@@ -665,16 +628,16 @@ Your financial workspace currently has:
             </h3>
 
             <p className="mt-2 text-xs sm:text-sm text-text-muted leading-relaxed max-w-md">
-              Chat any expense (e.g. groceries, subscriptions, client dinners). Chipr AI determines the exact category, tags Schedule C tax write-offs, and logs it directly to your SQLite database.
+              Log commercial expenses, record client receipts, ask about cash runway, or calculate Schedule C deductions. Chipr AI organizes records directly in your SQLite database.
             </p>
 
             {/* Quick interactive expense prompt pills */}
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2 max-w-lg">
               {[
-                "Spent ₱450 on groceries at Supermarket",
-                "Bought clothes at Zara ₱1,850",
-                "Paid electric bill ₱2,400",
-                "Figma team subscription ₱1,200",
+                "Paid AWS Cloud Hosting ₱4,800",
+                "Received client retainer ₱45,000",
+                "Bought 4K monitor for workstation ₱16,500",
+                "What is our estimated cash runway and monthly burn?",
               ].map((promptText, i) => (
                 <button
                   key={i}
@@ -692,18 +655,9 @@ Your financial workspace currently has:
 
             {/* Scope awareness indicator */}
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                  contextScope === "personal"
-                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
-                    : contextScope === "business"
-                    ? "bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
-                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                }`}
-              >
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                Active Context:{" "}
-                <strong className="capitalize">{contextScope} Scope</strong>
+                Ledger: <strong>{settings.businessName || "Commercial Operations"}</strong>
               </span>
 
               <button
@@ -983,7 +937,7 @@ Your financial workspace currently has:
             value={inputValue}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder="Type your expense here (e.g. 'Spent ₱450 on groceries', 'Bought clothes at Zara ₱1,850', 'Electric bill ₱2,400')..."
+            placeholder="Chat any business expense, client invoice query, cash runway calculation, or tax question..."
             className="w-full bg-transparent border-0 border-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 px-2 sm:px-2.5 pt-1.5 pb-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted resize-none min-h-11.5 max-h-40 leading-relaxed shadow-none"
             style={{ outline: "none", border: "none", boxShadow: "none" }}
           />
@@ -992,25 +946,9 @@ Your financial workspace currently has:
           <div className="flex items-center justify-between px-1.5 sm:px-2 pt-1">
             <div className="flex items-center gap-2">
               {/* Context Tag Pill */}
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors ${
-                  contextScope === "personal"
-                    ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300"
-                    : contextScope === "business"
-                    ? "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300"
-                    : "bg-brand/10 text-brand"
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    contextScope === "personal"
-                      ? "bg-indigo-500"
-                      : contextScope === "business"
-                      ? "bg-sky-500"
-                      : "bg-brand"
-                  }`}
-                />
-                <span className="capitalize">{contextScope}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 text-[10px] font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                <span>Commercial Ledger</span>
               </span>
 
               {/* Model Pill */}

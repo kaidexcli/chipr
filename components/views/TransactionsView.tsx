@@ -10,42 +10,32 @@ import {
   PlusIcon,
   TransactionIcon,
   TaxIcon,
-  ArrowsExchangeIcon,
-  UserIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
 } from "@/components/ui/Icons";
 
 export function TransactionsView() {
-  const { transactions, workspace, privacyMask, markReimbursed, metrics, settings } = useFinance();
+  const { transactions, privacyMask, markReimbursed, metrics, settings } = useFinance();
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
-  const displayedTransactions = transactions.filter((t) => t.entity === workspace);
-
-  const isPersonal = workspace === "personal";
+  const displayedTransactions = transactions;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-border-subtle bg-surface p-4 sm:p-6 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">
-              {isPersonal ? "Personal Financial Ledger" : `${settings.businessName || "Business"} Ledger`}
+              Financial Ledger
             </h1>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                isPersonal
-                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
-                  : "bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300"
-              }`}
-            >
-              {isPersonal ? "Personal" : settings.businessName || "Business"}
+            <span className="rounded-full bg-sky-50 dark:bg-sky-950/50 px-2.5 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300">
+              {settings.businessName || "Operations"}
             </span>
           </div>
           <p className="mt-1 text-xs sm:text-sm text-text-muted">
-            {isPersonal
-              ? "Household accounts, everyday spending, discretionary cards & savings flows."
-              : "Commercial operations, invoice payments, tax write-offs & vendor accounts payable."}
+            Commercial transactions, invoice payments, operating disbursements & tax write-offs.
           </p>
         </div>
 
@@ -69,7 +59,7 @@ export function TransactionsView() {
         <div className="rounded-2xl border border-border-subtle bg-surface p-3.5 sm:p-5 shadow-xs flex flex-col justify-between hover:border-border-strong hover:shadow-sm transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-semibold text-text-muted">
-              {isPersonal ? "Personal Records" : "Business Records"}
+              Total Records
             </span>
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400">
               <TransactionIcon className="w-3.5 h-3.5" />
@@ -83,39 +73,18 @@ export function TransactionsView() {
         <div className="rounded-2xl border border-border-subtle bg-surface p-3.5 sm:p-5 shadow-xs flex flex-col justify-between hover:border-border-strong hover:shadow-sm transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-semibold text-text-muted">
-              {isPersonal ? "Savings Rate" : "Tax Deductibles"}
+              Total Inflows
             </span>
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <TaxIcon className="w-3.5 h-3.5" />
+              <TrendingUpIcon className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="mt-2">
-            {isPersonal ? (
-              <span className="font-mono text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                {Math.max(0, Math.min(100, Math.round(metrics.savingsRate)))}%
-              </span>
-            ) : (
-              <MoneyAmount
-                amount={metrics.taxDeductibleTotal}
-                size="md"
-                colored
-                privacyMask={privacyMask}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border-subtle bg-surface p-3.5 sm:p-5 shadow-xs flex flex-col justify-between hover:border-border-strong hover:shadow-sm transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-semibold text-text-muted">Reimbursements</span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <ArrowsExchangeIcon className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2">
+          <div className="mt-2 text-lg sm:text-xl font-extrabold font-mono text-inflow">
             <MoneyAmount
-              amount={metrics.pendingReimbursements}
+              amount={metrics.grossRevenue}
               size="md"
+              colored
+              showSign
               privacyMask={privacyMask}
             />
           </div>
@@ -124,23 +93,43 @@ export function TransactionsView() {
         <div className="rounded-2xl border border-border-subtle bg-surface p-3.5 sm:p-5 shadow-xs flex flex-col justify-between hover:border-border-strong hover:shadow-sm transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-semibold text-text-muted">
-              {isPersonal ? "Net Worth" : "Owner Draws"}
+              Total Outflows
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <UserIcon className="w-3.5 h-3.5" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+              <TrendingDownIcon className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 text-lg sm:text-xl font-extrabold font-mono text-outflow">
+            <MoneyAmount
+              amount={-metrics.monthlyBurnRate}
+              size="md"
+              colored
+              privacyMask={privacyMask}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border-subtle bg-surface p-3.5 sm:p-5 shadow-xs flex flex-col justify-between hover:border-border-strong hover:shadow-sm transition-all group">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-semibold text-text-muted">
+              Tax Deductibles
+            </span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <TaxIcon className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="mt-2">
             <MoneyAmount
-              amount={isPersonal ? metrics.netWorth : metrics.totalOwnerDraws}
+              amount={metrics.taxDeductibleTotal}
               size="md"
+              colored
               privacyMask={privacyMask}
             />
           </div>
         </div>
       </div>
 
-      {/* Full Transaction Table (Scoped to Active Workspace) */}
+      {/* Full Transaction Table */}
       <TransactionTable
         transactions={displayedTransactions}
         privacyMask={privacyMask}
@@ -153,9 +142,9 @@ export function TransactionsView() {
           setEditingTx(tx);
           setIsTxModalOpen(true);
         }}
-        title={isPersonal ? "Personal Ledger Records" : `${settings.businessName || "Business"} Records`}
       />
 
+      {/* New/Edit Transaction Modal */}
       <NewTransactionModal
         isOpen={isTxModalOpen}
         onClose={() => {

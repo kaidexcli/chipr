@@ -11,21 +11,17 @@ import { ShieldCheckIcon, CheckCircleIcon, TaxIcon } from "@/components/ui/Icons
 export function ReportsView() {
   const { metrics, transactions, markReimbursed, privacyMask, settings } = useFinance();
 
-  const businessTxs = useMemo(() => {
-    return transactions.filter((t) => t.entity === "business");
-  }, [transactions]);
-
   const deductibleTransactions = useMemo(() => {
-    return businessTxs.filter((t) => t.isTaxDeductible && t.amount < 0);
-  }, [businessTxs]);
+    return transactions.filter((t) => t.isTaxDeductible && t.amount < 0);
+  }, [transactions]);
 
   const crossEntityPending = useMemo(() => {
     return transactions.filter((t) => t.reimbursementStatus === "pending");
   }, [transactions]);
 
   const ownerDraws = useMemo(() => {
-    return businessTxs.filter((t) => t.isOwnerDraw);
-  }, [businessTxs]);
+    return transactions.filter((t) => t.isOwnerDraw);
+  }, [transactions]);
 
   // Dynamic receipt compliance rate
   const complianceRate = useMemo(() => {
