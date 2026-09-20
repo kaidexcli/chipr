@@ -6,14 +6,111 @@ export interface IconProps {
 
 export function LogoMark({ className = "w-6 h-6" }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" fillOpacity="0.12" />
+    <svg
+      className={className}
+      viewBox="8 10 106 98"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        {/* Main Body Gradient: Deep Indigo to Royal Violet */}
+        <linearGradient id="chiprLogoBodyGrad" x1="22" y1="20" x2="98" y2="98" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#818cf8" />
+          <stop offset="55%" stopColor="#4f46e5" />
+          <stop offset="100%" stopColor="#3730a3" />
+        </linearGradient>
+
+        {/* Belly Gradient: Soft Iridescent Lilac to Sky */}
+        <linearGradient id="chiprLogoBellyGrad" x1="46" y1="46" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="60%" stopColor="#c7d2fe" />
+          <stop offset="100%" stopColor="#a5b4fc" />
+        </linearGradient>
+
+        {/* Wing Gradient: Velvet Indigo Depth */}
+        <linearGradient id="chiprLogoWingGrad" x1="28" y1="48" x2="68" y2="88" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#6366f1" />
+          <stop offset="100%" stopColor="#312e81" />
+        </linearGradient>
+
+        {/* Beak Gradient: Warm Golden Amber */}
+        <linearGradient id="chiprLogoBeakGrad" x1="90" y1="44" x2="110" y2="52" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#f59e0b" />
+        </linearGradient>
+
+        {/* Financial Coin Charm Gradient */}
+        <linearGradient id="chiprLogoCoinGrad" x1="42" y1="74" x2="54" y2="86" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#34d399" />
+          <stop offset="100%" stopColor="#059669" />
+        </linearGradient>
+      </defs>
+
+      {/* Tail Feathers */}
+      <path d="M22 68 C12 60 5 72 9 82 C13 86 24 84 32 76 Z" fill="#4338ca" />
+      <path d="M26 62 C16 54 9 63 13 73 C17 78 28 76 36 68 Z" fill="#4f46e5" />
+
+      {/* Main Plump Body */}
       <path
-        d="M7 12H17M12 7V17M15.5 8.5L8.5 15.5"
-        stroke="currentColor"
-        strokeWidth="2"
+        d="M30 64 C30 38 52 24 74 26 C94 28 102 46 98 68 C94 90 74 102 52 100 C36 98 30 82 30 64 Z"
+        fill="url(#chiprLogoBodyGrad)"
+      />
+
+      {/* Breast / Belly Patch */}
+      <path
+        d="M54 44 C66 44 86 52 86 70 C86 86 72 98 56 98 C46 98 42 90 42 80 C42 60 48 44 54 44 Z"
+        fill="url(#chiprLogoBellyGrad)"
+      />
+
+      {/* Head Tuft Feathers */}
+      <path d="M68 26 C68 18 72 14 78 12 C78 18 76 22 72 26 Z" fill="#818cf8" />
+      <path d="M62 27 C60 21 64 16 70 15 C68 20 67 24 64 28 Z" fill="#6366f1" />
+
+      {/* Cheerful Beak */}
+      <path d="M92 46 L109 51 C110 51.5 110 52.5 109 53 L92 58 Z" fill="url(#chiprLogoBeakGrad)" />
+      <path d="M92 52 L105 52.5 L92 57 Z" fill="#d97706" opacity="0.45" />
+
+      {/* Wing */}
+      <path
+        d="M38 58 C38 58 48 52 62 56 C72 60 74 72 68 82 C60 92 42 88 34 76 C32 72 36 62 38 58 Z"
+        fill="url(#chiprLogoWingGrad)"
+      />
+      <path
+        d="M46 64 C52 60 62 64 64 74 C60 80 48 80 42 74 Z"
+        fill="#818cf8"
+        fillOpacity="0.4"
+      />
+
+      {/* Emerald Growth Coin on Wing */}
+      <circle cx="48" cy="80" r="5" fill="url(#chiprLogoCoinGrad)" />
+      <path
+        d="M48 77.2 V82.8 M45.5 80 H50.5"
+        stroke="#ffffff"
+        strokeWidth="1.3"
         strokeLinecap="round"
-        strokeLinejoin="round"
+      />
+
+      {/* Cheerful Cheek Blush */}
+      <ellipse cx="84" cy="53" rx="5" ry="3.2" fill="#fb7185" fillOpacity="0.4" />
+
+      {/* Big Friendly Eye */}
+      <circle cx="80" cy="42" r="5.8" fill="#0f172a" />
+      <circle cx="82" cy="40.3" r="2.2" fill="#ffffff" />
+      <circle cx="78.2" cy="43.6" r="0.9" fill="#ffffff" />
+
+      {/* Perched Feet */}
+      <path
+        d="M48 100 L46 106 M50 100 L51 106 M62 99 L61 105 M65 99 L67 105"
+        stroke="#f59e0b"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+
+      {/* Sparkle Star near Beak */}
+      <path
+        d="M107 33 L108.5 29.5 L112 28 L108.5 26.5 L107 23 L105.5 26.5 L102 28 L105.5 29.5 Z"
+        fill="#fbbf24"
       />
     </svg>
   );

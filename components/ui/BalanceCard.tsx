@@ -171,16 +171,6 @@ export function BalanceCard({
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted font-mono">
                 {theme.label}
               </span>
-              {/* Entity badge */}
-              {account.entity === "business" ? (
-                <span className="rounded-md bg-sky-50 dark:bg-sky-950/50 px-1.5 py-0.5 text-[9px] font-bold text-sky-700 dark:text-sky-300">
-                  Business
-                </span>
-              ) : (
-                <span className="rounded-md bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 dark:text-indigo-300">
-                  Personal
-                </span>
-              )}
             </div>
             <h4 className="text-sm font-bold text-text-primary tracking-tight truncate max-w-[180px] sm:max-w-[200px] mt-0.5">
               {account.name}

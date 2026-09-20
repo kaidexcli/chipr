@@ -91,7 +91,7 @@ export function BrandMark({
   partner = null,
   size = "md",
   variant = "full",
-  mascot = false,
+  mascot = true,
   ...props
 }: BrandMarkProps) {
   const isGlyphOnly = variant === "glyph";

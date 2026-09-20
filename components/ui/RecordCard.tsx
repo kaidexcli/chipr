@@ -246,16 +246,6 @@ export function RecordCard({
       <div className="mt-3.5 pt-3 border-t border-border-subtle/70 flex flex-wrap items-center justify-between gap-2">
         {/* Badges Cluster */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {/* Entity Badge */}
-          {entity === "business" ? (
-            <span className="inline-flex items-center rounded-md bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-300">
-              Biz
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
-              Personal
-            </span>
-          )}
 
           {/* Tax Deductible Tag */}
           {isTaxDeductible && (

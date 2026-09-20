@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useFinance, NavigationTab } from "@/context/FinanceContext";
-import { WorkspaceEntity } from "@/types/finance";
 import {
   SearchIcon,
   XMarkIcon,
   DashboardIcon,
   TransactionIcon,
-  BudgetIcon,
   InvoiceIcon,
   TaxIcon,
   PnLIcon,
@@ -32,7 +30,7 @@ interface CommandPaletteProps {
   onOpenTxModal: () => void;
   onOpenInvoiceModal: () => void;
   onOpenAccountModal: () => void;
-  onOpenBudgetModal: () => void;
+  onOpenBudgetModal?: () => void;
 }
 
 export function CommandPalette({
@@ -80,11 +78,6 @@ export function CommandPalette({
 
   const handleSelectTab = (tab: NavigationTab) => {
     setActiveTab(tab);
-    onClose();
-  };
-
-  const handleSelectWorkspace = (ws: WorkspaceEntity) => {
-    setWorkspace(ws);
     onClose();
   };
 
@@ -197,17 +190,6 @@ export function CommandPalette({
                 <WalletIcon className="w-3.5 h-3.5 text-brand" />
                 <span>Add Account</span>
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenBudgetModal();
-                  onClose();
-                }}
-                className="flex items-center gap-2 rounded-xl p-2 text-left hover:bg-raised text-text-primary font-medium transition-colors cursor-pointer"
-              >
-                <BudgetIcon className="w-3.5 h-3.5 text-brand" />
-                <span>New Budget Envelope</span>
-              </button>
             </div>
           </div>
 
@@ -240,14 +222,6 @@ export function CommandPalette({
               >
                 <InvoiceIcon className="w-3.5 h-3.5 text-text-secondary" />
                 <span>Invoicing & Receivables</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectTab("budgets")}
-                className="flex items-center gap-2 rounded-xl p-2 text-left hover:bg-raised text-text-primary font-medium transition-colors cursor-pointer"
-              >
-                <BudgetIcon className="w-3.5 h-3.5 text-text-secondary" />
-                <span>Budgets & Goals</span>
               </button>
               <button
                 type="button"

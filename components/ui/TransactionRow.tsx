@@ -144,17 +144,6 @@ export function TransactionRow({
               {merchant}
             </h4>
 
-            {/* Entity Badge */}
-            {entity === "business" ? (
-              <span className="inline-flex items-center rounded-md bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-300">
-                Biz
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
-                Pers
-              </span>
-            )}
-
             {/* Tax Deductible Badge */}
             {isTaxDeductible && (
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">

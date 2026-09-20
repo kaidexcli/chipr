@@ -1,96 +1,220 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useFinance } from "@/context/FinanceContext";
 import { MoneyAmount } from "@/components/ui/MoneyAmount";
 import { LogoMark, CreditPlusIcon } from "@/components/ui/Icons";
 
 interface DebitCardMockupProps {
   className?: string;
+  variant?: "full" | "compact";
 }
 
-export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
-  const { workspace, settings, metrics, privacyMask, openAddCreditModal } = useFinance();
+export function DebitCardMockup({
+  className = "",
+  variant = "full",
+}: DebitCardMockupProps) {
+  const { settings, metrics, privacyMask, openAddCreditModal } = useFinance();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50 });
 
-  const cardholderName =
-    workspace === "business"
-      ? (settings.businessName || "BUSINESS ACCOUNT").toUpperCase()
-      : (settings.personalName || "CARDHOLDER").toUpperCase();
+  // Dynamic calendar date (Month/Day: updates per day proportional to calendar)
+  const [currentDateFormatted, setCurrentDateFormatted] = useState("09/20");
 
-  // Balance displayed on card: liquid cash or primary checking balance
-  const cardBalance =
-    workspace === "business"
-      ? metrics.businessLiquidCash
-      : metrics.netWorth;
+  useEffect(() => {
+    const updateDate = () => {
+      const now = new Date();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      setCurrentDateFormatted(`${mm}/${dd}`);
+    };
+    updateDate();
+    const interval = setInterval(updateDate, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const cardTier =
-    workspace === "business"
-      ? "COMMERCIAL TITANIUM"
-      : "PERSONAL PLATINUM";
+  const cardContainerRef = useRef<HTMLDivElement>(null);
+
+  const businessName = (
+    settings.businessName || "CHIPR VENTURES LLC"
+  ).toUpperCase();
+  const cardholderName = (
+    settings.personalName || "BENEDICT FUSIN"
+  ).toUpperCase();
+  const cardBalance = metrics.businessLiquidCash;
+  const cardNumberFormatted = "2024-12024-MN-0";
+
+  // Dynamic 3D interactive tilt & specular light calculation
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardContainerRef.current) return;
+    const rect = cardContainerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateX = ((y - centerY) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 12;
+    const glareX = (x / rect.width) * 100;
+    const glareY = (y / rect.height) * 100;
+
+    setTilt({ x: rotateX, y: rotateY, glareX, glareY });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0, glareX: 50, glareY: 50 });
+  };
+
+  const handleCopyCard = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard?.writeText(cardNumberFormatted);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div className={`w-full max-w-[390px] mx-auto space-y-3.5 ${className}`}>
-      {/* 3D Perspective Card Container */}
+    <div className={`w-full max-w-[430px] mx-auto space-y-4 ${className}`}>
+      {/* 3D Perspective Card Viewport */}
       <div
-        className="relative w-full aspect-[1.586/1] cursor-pointer select-none group"
-        style={{ perspective: "1000px" }}
+        ref={cardContainerRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         onClick={() => setIsFlipped((prev) => !prev)}
+        className="relative w-full aspect-[1.586/1] cursor-pointer select-none group"
+        style={{ perspective: "1400px" }}
         title="Click to flip card"
       >
+        {/* Dynamic Multi-Spectral Ambient Aura (Deep Sapphire & Electric Cyan Glow) */}
         <div
-          className={`relative w-full h-full rounded-[22px] transition-transform duration-700 [transform-style:preserve-3d] shadow-[0_12px_35px_rgba(0,0,0,0.35)] ring-1 ring-white/15 ${
+          className="absolute -inset-3 rounded-[32px] bg-gradient-to-tr from-blue-700/40 via-cyan-500/30 to-indigo-700/40 blur-2xl opacity-60 group-hover:opacity-100 transition-all duration-500 pointer-events-none"
+          style={{
+            transform: `translate(${tilt.y * 1.8}px, ${-tilt.x * 1.8}px)`,
+          }}
+        />
+
+        {/* 3D Rotating Titanium Card Slab */}
+        <div
+          className={`relative w-full h-full rounded-[24px] transition-all duration-500 ease-out [transform-style:preserve-3d] shadow-[0_25px_60px_-15px_rgba(2,8,28,0.85),0_0_0_1px_rgba(56,189,248,0.25)] ${
             isFlipped ? "[transform:rotateY(180deg)]" : ""
           }`}
+          style={{
+            transform: isFlipped
+              ? "rotateY(180deg)"
+              : `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          }}
         >
-          {/* ================= FRONT OF CARD ================= */}
-          <div
-            className={`absolute inset-0 w-full h-full rounded-[22px] p-4 sm:p-5 flex flex-col justify-between overflow-hidden [backface-visibility:hidden] ${
-              workspace === "business"
-                ? "bg-gradient-to-tr from-slate-950 via-[#0a192f] to-sky-950 text-white"
-                : workspace === "personal"
-                ? "bg-gradient-to-tr from-neutral-950 via-[#1e1435] to-indigo-950 text-white"
-                : "bg-gradient-to-tr from-stone-950 via-neutral-900 to-zinc-900 text-white"
-            }`}
-          >
-            {/* Holographic Specular Sheen Effect */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.07] to-transparent opacity-60 pointer-events-none group-hover:opacity-100 transition-opacity duration-500" />
+          {/* ========================================================================= */}
+          {/* FRONT OF CARD: Enterprise-Grade Sapphire Titanium Masterpiece            */}
+          {/* ========================================================================= */}
+          <div className="absolute inset-0 w-full h-full rounded-[24px] p-5 sm:p-6 flex flex-col justify-between overflow-hidden [backface-visibility:hidden] bg-[#050f26] text-white">
+            {/* 1. Deep Multi-Layered Royal Sapphire Mesh Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#061a40] via-[#0b2b6b] to-[#030919] opacity-95" />
 
-            {/* Subtle Metallic Grid Texture */}
+            {/* 2. Physical Brushed Metal Substrate Texture */}
             <div
-              className="absolute inset-0 opacity-15 pointer-events-none"
+              className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay"
               style={{
                 backgroundImage:
-                  "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)",
-                backgroundSize: "16px 16px",
+                  "repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px)",
               }}
             />
 
-            {/* Top Bar: Chipr Brand + Tier + Contactless Wave */}
+            {/* 3. Swiss Banknote / Topographical Laser-Etched Guilloche Contours */}
+            <svg
+              className="absolute inset-0 w-full h-full opacity-20 pointer-events-none mix-blend-screen"
+              viewBox="0 0 400 252"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M-50 200 C 50 120, 150 280, 250 160 C 350 40, 420 180, 480 110"
+                stroke="url(#guilloche-cyan)"
+                strokeWidth="1.2"
+                fill="none"
+              />
+              <path
+                d="M-50 220 C 50 140, 150 300, 250 180 C 350 60, 420 200, 480 130"
+                stroke="url(#guilloche-cyan)"
+                strokeWidth="1"
+                fill="none"
+                strokeOpacity="0.8"
+              />
+              <path
+                d="M-50 180 C 50 100, 150 260, 250 140 C 350 20, 420 160, 480 90"
+                stroke="url(#guilloche-cyan)"
+                strokeWidth="0.8"
+                fill="none"
+                strokeOpacity="0.6"
+              />
+              <path
+                d="M-50 240 C 50 160, 150 320, 250 200 C 350 80, 420 220, 480 150"
+                stroke="url(#guilloche-cyan)"
+                strokeWidth="0.6"
+                fill="none"
+                strokeOpacity="0.4"
+              />
+              {/* Concentric Geometric Radar Watermark */}
+              <circle cx="340" cy="80" r="90" stroke="url(#guilloche-cyan)" strokeWidth="0.6" strokeDasharray="3 3" />
+              <circle cx="340" cy="80" r="130" stroke="url(#guilloche-cyan)" strokeWidth="0.4" strokeDasharray="4 6" />
+              <circle cx="340" cy="80" r="170" stroke="url(#guilloche-cyan)" strokeWidth="0.3" />
+              <defs>
+                <linearGradient id="guilloche-cyan" x1="0" y1="0" x2="400" y2="252" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#38bdf8" />
+                  <stop offset="0.5" stopColor="#60a5fa" />
+                  <stop offset="1" stopColor="#818cf8" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {/* 4. Dynamic Anisotropic Specular Glare Spotlight */}
+            <div
+              className="absolute inset-0 opacity-50 group-hover:opacity-85 transition-opacity duration-300 pointer-events-none mix-blend-color-dodge"
+              style={{
+                background: `radial-gradient(ellipse 65% 55% at ${tilt.glareX}% ${tilt.glareY}%, rgba(125,211,252,0.45) 0%, rgba(59,130,246,0.2) 40%, transparent 80%)`,
+              }}
+            />
+
+            {/* 5. Physical CNC Chamfered Edge Highlight */}
+            <div className="absolute inset-0 rounded-[24px] border border-white/20 pointer-events-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-1px_1px_rgba(0,0,0,0.8)]" />
+
+            {/* ======================= TOP ROW ======================= */}
             <div className="relative z-10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 backdrop-blur-md border border-white/20 shadow-xs">
-                  <LogoMark className="w-4 h-4 text-white" />
+              {/* Enterprise Brand Identity Lockup */}
+              <div className="flex items-center gap-3">
+                {/* Precision Glassmorphic Logo Shield */}
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-white/25 via-white/10 to-white/15 p-0.5 shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-white/35 backdrop-blur-md">
+                  <div className="h-full w-full bg-slate-950/50 rounded-[14px] flex items-center justify-center overflow-hidden p-0.5">
+                    <LogoMark className="w-7 h-7 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" />
+                  </div>
                 </div>
-                <div>
-                  <span className="text-xs font-black tracking-widest uppercase">
-                    Chipr
-                  </span>
-                  <p className="text-[8px] font-mono tracking-wider text-white/60">
-                    {cardTier}
-                  </p>
+
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black tracking-[0.25em] uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-sans">
+                      CHIPR
+                    </span>
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[8px] font-mono font-bold tracking-wider bg-sky-500/20 text-sky-300 border border-sky-400/30 shadow-xs">
+                      PRO
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[8.5px] font-mono tracking-wider text-cyan-200/80 uppercase font-semibold">
+                    <span>SAPPHIRE RESERVE</span>
+                    <span className="text-cyan-400/60">•</span>
+                    <span className="text-cyan-300/70 font-sans tracking-normal text-[8px]">FDIC INSURED</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Contactless Wave Icon SVG */}
-              <div className="flex items-center gap-2 text-white/70">
+              {/* NFC Contactless Wave Symbol in Polished Titanium */}
+              <div className="flex items-center justify-center text-cyan-300/90 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20 shadow-inner">
                 <svg
-                  className="w-5 h-5 -rotate-90"
+                  className="w-4 h-4 -rotate-90"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.4"
                   strokeLinecap="round"
                 >
                   <path d="M8.5 16.5a5 5 0 0 1 0-9" />
@@ -100,100 +224,114 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
               </div>
             </div>
 
-            {/* Middle Section: EMV Smart Chip + Live Balance */}
-            <div className="relative z-10 flex items-center justify-between my-auto">
-              {/* EMV Gold Chip SVG */}
-              <div className="relative w-11 h-8 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 p-0.5 shadow-inner border border-amber-300/40">
-                <svg
-                  className="w-full h-full text-amber-950/60"
-                  viewBox="0 0 44 32"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                >
-                  <rect x="1" y="1" width="42" height="30" rx="3" strokeWidth="0.8" />
-                  <path d="M1 10h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H1" />
-                  <path d="M43 10H29a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14" />
-                  <line x1="17" y1="1" x2="17" y2="31" />
-                  <line x1="27" y1="1" x2="27" y2="31" />
-                  <circle cx="22" cy="16" r="3" fill="currentColor" fillOpacity="0.2" />
-                </svg>
+            {/* ======================= MIDDLE SECTION ======================= */}
+            <div className="relative z-10 flex items-center justify-between my-auto pt-2">
+              {/* Industrial Cryptographic EMV Microchip (Palladium & Gold Contact Pads) */}
+              <div className="relative w-13 h-10 rounded-xl bg-gradient-to-br from-slate-200 via-slate-300 to-amber-200/90 p-[1.5px] shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_4px_10px_rgba(0,0,0,0.5)] border border-white/50 group-hover:scale-105 transition-transform">
+                <div className="w-full h-full bg-gradient-to-br from-slate-100 via-amber-100/60 to-slate-200 rounded-[10px] p-0.5 overflow-hidden">
+                  <svg
+                    className="w-full h-full text-slate-800/80"
+                    viewBox="0 0 44 32"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  >
+                    <rect x="1" y="1" width="42" height="30" rx="3" strokeWidth="0.8" />
+                    <path d="M1 10h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H1" stroke="rgba(23,37,84,0.75)" />
+                    <path d="M43 10H29a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14" stroke="rgba(23,37,84,0.75)" />
+                    <line x1="17" y1="1" x2="17" y2="31" stroke="rgba(23,37,84,0.75)" />
+                    <line x1="27" y1="1" x2="27" y2="31" stroke="rgba(23,37,84,0.75)" />
+                    <circle cx="22" cy="16" r="4" fill="rgba(14,165,233,0.3)" stroke="rgba(23,37,84,0.85)" />
+                  </svg>
+                </div>
               </div>
 
-              {/* Balance Readout on Card - Click to Add Credit */}
+              {/* Integrated Liquid Treasury Display with Embedded Top-Up Action */}
               <div
                 onClick={(e) => {
                   e.stopPropagation();
                   openAddCreditModal();
                 }}
-                className="text-right group/credit cursor-pointer rounded-xl px-2.5 py-1.5 -mr-1.5 transition-all hover:bg-white/15 active:scale-95 ring-1 ring-transparent hover:ring-white/20"
-                title="Financial Tracker: Click to Add Credit"
+                className="text-right group/credit cursor-pointer rounded-2xl px-3.5 py-2 transition-all bg-white/[0.08] hover:bg-white/[0.16] active:scale-95 border border-white/20 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]"
+                title="Commercial Treasury Balance: Click to Top-Up"
               >
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="text-[9px] font-mono uppercase tracking-wider text-white/60 block">
-                    Available Balance
+                <div className="flex items-center justify-end gap-1.5 mb-0.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[8px] font-mono uppercase tracking-widest text-cyan-200/90 font-bold">
+                    Liquid Treasury
                   </span>
-                  <span className="inline-flex items-center gap-0.5 rounded px-1 text-[8px] font-bold text-emerald-300 bg-emerald-500/25 border border-emerald-400/30 group-hover/credit:bg-emerald-500/40 transition-colors">
+                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.2 text-[8px] font-bold text-emerald-300 bg-emerald-500/30 border border-emerald-400/40 group-hover/credit:bg-emerald-500/50 transition-colors">
                     <CreditPlusIcon className="w-2.5 h-2.5" />
                     <span>Top-Up</span>
                   </span>
                 </div>
-                <MoneyAmount
-                  amount={cardBalance}
-                  size="sm"
-                  privacyMask={privacyMask}
-                  className="text-white font-bold tracking-tight"
-                />
-              </div>
-            </div>
-
-            {/* Bottom Section: User Name (Replacing Card Number) + Workspace Details */}
-            <div className="relative z-10 space-y-2">
-              {/* User Name in place of card number */}
-              <div className="space-y-0.5">
-                <span className="text-[8px] uppercase tracking-widest text-white/50 block font-mono">
-                  Account Owner
-                </span>
-                <div className="text-sm sm:text-base font-bold tracking-wider text-white drop-shadow-xs truncate font-sans">
-                  {cardholderName}
-                </div>
-              </div>
-
-              <div className="flex items-end justify-between text-[10px] pt-0.5">
-                <div>
-                  <span className="text-[8px] uppercase tracking-wider text-white/50 block font-mono">
-                    Workspace Scope
-                  </span>
-                  <span className="font-semibold tracking-wider truncate max-w-[170px] block text-white/90">
-                    {workspace === "business"
-                      ? "Commercial Operations"
-                      : workspace === "personal"
-                      ? "Personal Wealth"
-                      : "Unified Portfolio"}
-                  </span>
-                </div>
-
-                <div className="text-center font-mono">
-                  <span className="text-[8px] uppercase tracking-wider text-white/50 block">
-                    Established
-                  </span>
-                  <span className="font-bold text-white/90">2026</span>
-                </div>
-
-                {/* Holographic Security Emblem */}
-                <div className="flex items-center -space-x-2 shrink-0">
-                  <div className="w-6 h-6 rounded-full bg-rose-500/85 backdrop-blur-xs shadow-xs" />
-                  <div className="w-6 h-6 rounded-full bg-amber-400/85 backdrop-blur-xs shadow-xs mix-blend-screen" />
+                <div className="text-white font-extrabold font-mono tracking-tight text-sm sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  <MoneyAmount
+                    amount={cardBalance}
+                    size="sm"
+                    privacyMask={privacyMask}
+                    className="text-white font-bold tracking-tight"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Frozen Overlay */}
+            {/* ======================= BOTTOM ROW ======================= */}
+            <div className="relative z-10 space-y-2.5">
+              {/* Embossed Metallic Laser-Cut Card Number */}
+              <div className="flex items-center justify-between group/num">
+                <div className="font-mono text-xs sm:text-sm font-bold tracking-[0.20em] sm:tracking-[0.24em] text-white/95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] [text-shadow:_0_1px_2px_rgba(0,0,0,0.9),_0_-1px_0_rgba(255,255,255,0.25)]">
+                  {privacyMask ? "••••-•••••-••-0" : cardNumberFormatted}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyCard}
+                  className="opacity-0 group-hover:opacity-100 px-2 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-white text-[9px] font-mono transition-all cursor-pointer shadow-xs"
+                  title="Copy card number"
+                >
+                  {copied ? "COPIED!" : "COPY"}
+                </button>
+              </div>
+
+              {/* Cardholder Signature Name (Top) & Entity (Sub-line) + Expiry & Hologram */}
+              <div className="flex items-end justify-between text-[10px] pt-1.5 border-t border-white/15">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[7.5px] uppercase tracking-widest text-cyan-200/60 block font-mono font-bold">
+                    Account Owner / Signatory
+                  </span>
+                  <span className="font-black tracking-wider truncate block text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] text-xs sm:text-sm font-sans">
+                    {cardholderName}
+                  </span>
+                  <span className="text-[9px] text-cyan-200/90 tracking-tight block truncate font-sans font-semibold mt-0.5">
+                    {businessName}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3.5 shrink-0">
+                  <div className="text-right font-mono">
+                    <span className="text-[7.5px] uppercase tracking-wider text-cyan-200/60 block font-bold">
+                      Expires
+                    </span>
+                    <span className="font-extrabold text-white tracking-wider text-xs drop-shadow-xs">
+                      {currentDateFormatted}
+                    </span>
+                  </div>
+
+                  {/* High-Security Iridescent Holographic Optical Variable Device (OVD) */}
+                  <div className="relative flex items-center -space-x-3">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 opacity-90 shadow-[0_2px_8px_rgba(0,0,0,0.5)] border border-white/30" />
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-400 via-teal-300 to-sky-200 opacity-85 mix-blend-screen shadow-[0_2px_8px_rgba(0,0,0,0.5)] border border-white/30" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FROZEN / LOCKED CARD OVERLAY */}
             {isFrozen && (
-              <div className="absolute inset-0 z-30 bg-slate-950/80 backdrop-blur-xs rounded-[22px] flex flex-col items-center justify-center text-center p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 text-red-400 border border-red-500/30 mb-2 animate-pulse">
+              <div className="absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-md rounded-[24px] flex flex-col items-center justify-center text-center p-4 animate-in fade-in duration-200">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 mb-2 shadow-[0_0_25px_rgba(6,182,212,0.4)] animate-pulse">
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -205,93 +343,96 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                 </div>
-                <span className="text-xs font-bold tracking-wider text-white uppercase">
-                  Account Locked
+                <span className="text-xs font-black tracking-widest text-white uppercase drop-shadow-xs">
+                  Card Frozen
                 </span>
-                <span className="text-[10px] text-white/60 mt-0.5">
-                  Transactions and actions temporarily frozen
+                <span className="text-[10px] text-cyan-200/80 mt-1 max-w-[220px]">
+                  Commercial transactions and virtual card authorizations locked
                 </span>
               </div>
             )}
           </div>
 
-          {/* ================= BACK OF CARD ================= */}
-          <div
-            className={`absolute inset-0 w-full h-full rounded-[22px] flex flex-col justify-between overflow-hidden [transform:rotateY(180deg)] [backface-visibility:hidden] ${
-              workspace === "business"
-                ? "bg-slate-950 text-white"
-                : workspace === "personal"
-                ? "bg-[#140d25] text-white"
-                : "bg-neutral-950 text-white"
-            }`}
-          >
-            {/* Magnetic Stripe Accent */}
-            <div className="w-full h-10 bg-black mt-5" />
+          {/* ========================================================================= */}
+          {/* BACK OF CARD: Ultra-Luxurious Obsidian Titanium Reverse Side              */}
+          {/* ========================================================================= */}
+          <div className="absolute inset-0 w-full h-full rounded-[24px] flex flex-col justify-between overflow-hidden [transform:rotateY(180deg)] [backface-visibility:hidden] bg-gradient-to-br from-[#030814] via-[#07132e] to-[#02050c] text-white">
+            {/* High-Coercivity Magnetic Stripe with Hologram Security Thread */}
+            <div className="w-full h-11 bg-gradient-to-r from-neutral-950 via-slate-950 to-neutral-950 mt-5 border-y border-white/10 shadow-inner flex items-center px-5">
+              <div className="w-full h-2.5 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent rounded-full opacity-40" />
+            </div>
 
-            {/* Signature & Member Identifier Strip */}
-            <div className="px-5 space-y-1.5">
-              <div className="flex items-center justify-between text-[8px] font-mono text-white/50 uppercase tracking-wider">
-                <span>Authorized Signature</span>
-                <span>Security Token</span>
+            {/* Signature Panel & Security CVV */}
+            <div className="px-6 space-y-1.5">
+              <div className="flex items-center justify-between text-[8px] font-mono text-cyan-200/70 uppercase tracking-wider font-bold">
+                <span>Authorized Signatory</span>
+                <span>Security Token (CVV)</span>
               </div>
               <div className="flex items-center gap-3">
+                {/* Security Guilloche Signature Strip */}
                 <div
-                  className="flex-1 h-7 bg-neutral-200 rounded text-neutral-800 flex items-center px-3 font-mono text-[9px] italic"
+                  className="flex-1 h-9 bg-slate-100 rounded-lg text-slate-800 flex items-center px-3.5 font-mono text-[11px] italic shadow-inner border border-slate-300"
                   style={{
                     backgroundImage:
-                      "repeating-linear-gradient(45deg, #e5e7eb, #e5e7eb 8px, #f3f4f6 8px, #f3f4f6 16px)",
+                      "repeating-linear-gradient(45deg, #e2e8f0, #e2e8f0 6px, #f8fafc 6px, #f8fafc 12px)",
                   }}
                 >
-                  {cardholderName}
+                  <span className="font-serif font-bold text-slate-800 select-none">
+                    {cardholderName}
+                  </span>
                 </div>
-                <div className="h-7 px-2.5 bg-white rounded text-neutral-900 font-mono font-black text-[11px] flex items-center justify-center tracking-wider shadow-inner">
-                  {privacyMask ? "••••" : "CHIPR-01"}
+                {/* 3-digit CVV box with privacy masking */}
+                <div className="h-9 px-3.5 bg-white rounded-lg text-slate-950 font-mono font-black text-xs flex items-center justify-center tracking-widest shadow-md border border-white">
+                  {privacyMask ? "•••" : "024"}
                 </div>
               </div>
             </div>
 
-            {/* Legal / Concierge Info */}
-            <div className="px-5 pb-4 space-y-1">
-              <p className="text-[7.5px] leading-tight text-white/40">
-                Digital identity card for Chipr Financial Platform. Used for wealth management, tax tracking, and corporate accounts.
+            {/* Legal Fine Etching & Concierge Strip */}
+            <div className="px-6 pb-5 space-y-1.5">
+              <p className="text-[7.5px] leading-relaxed text-slate-400/90 font-mono">
+                Official Commercial Debit & Treasury Pass for Chipr Financial Platform. Issued under FDIC insured partner institutions. Not transferable.
               </p>
-              <div className="flex items-center justify-between text-[8px] font-mono text-white/60 pt-1 border-t border-white/10">
-                <span>chipr.fi • 24/7 Concierge</span>
-                <span>Tap anywhere to flip</span>
+              <div className="flex items-center justify-between text-[8.5px] font-mono text-cyan-300/90 pt-1.5 border-t border-white/10">
+                <span className="flex items-center gap-1.5 font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  chipr.fi • 24/7 Enterprise Desk
+                </span>
+                <span className="text-white/60">Tap anywhere to flip</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Interactive Quick Action Bar */}
+      {/* Enterprise Card Quick Action Bar */}
       <div className="flex items-center justify-between gap-2 px-1">
-        {/* Add Credit Action */}
+        {/* Top-Up / Add Credit */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             openAddCreditModal();
           }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white transition-all cursor-pointer shadow-xs border border-emerald-500/80"
-          title="Add credit or top up funds to your account"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white transition-all cursor-pointer shadow-xs border border-emerald-500/80"
+          title="Add credit or deposit funds"
         >
           <CreditPlusIcon className="w-3.5 h-3.5" />
           <span>Add Credit</span>
         </button>
 
-        {/* Flip Card Action */}
+        {/* Flip Card */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             setIsFlipped((prev) => !prev);
           }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-semibold bg-surface border border-border-subtle text-text-secondary hover:bg-raised hover:text-text-primary transition-all cursor-pointer shadow-xs"
-          title="Flip card between front and back"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold bg-surface border border-border-subtle text-text-secondary hover:bg-raised hover:text-text-primary active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+          title="Flip card"
         >
           <svg
-            className="w-3.5 h-3.5"
+            className="w-3.5 h-3.5 transition-transform group-hover:rotate-180 duration-500"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -305,19 +446,19 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
           <span>{isFlipped ? "Show Front" : "Card Details"}</span>
         </button>
 
-        {/* Freeze Account Button */}
+        {/* Freeze / Lock Card */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             setIsFrozen((prev) => !prev);
           }}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 sm:px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-xs active:scale-[0.98] ${
             isFrozen
-              ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 border-red-300 dark:border-red-800"
+              ? "bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800"
               : "bg-surface border-border-subtle text-text-secondary hover:bg-raised hover:text-text-primary"
           }`}
-          title={isFrozen ? "Unlock account actions" : "Lock account actions"}
+          title={isFrozen ? "Unlock card" : "Freeze card"}
         >
           <svg
             className="w-3.5 h-3.5"
@@ -331,13 +472,12 @@ export function DebitCardMockup({ className = "" }: DebitCardMockupProps) {
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-          <span>{isFrozen ? "Unlock" : "Lock"}</span>
+          <span>{isFrozen ? "Unfreeze" : "Freeze"}</span>
         </button>
       </div>
 
-      {/* Financial Tracker Hint */}
       <p className="text-[10px] text-center text-text-muted font-mono tracking-tight opacity-75">
-        Financial Tracker Mode • Use &ldquo;Add Credit&rdquo; to simulate balance inflows
+        Enterprise Sapphire Titanium • Dynamic 3D tilt, guilloche contour watermark & real-time calendar date
       </p>
     </div>
   );
