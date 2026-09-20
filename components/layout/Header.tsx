@@ -5,7 +5,6 @@ import { useFinance } from "@/context/FinanceContext";
 import { NewTransactionModal } from "@/components/modals/NewTransactionModal";
 import { NewInvoiceModal } from "@/components/modals/NewInvoiceModal";
 import { AccountModal } from "@/components/modals/AccountModal";
-import { NewBudgetModal } from "@/components/modals/NewBudgetModal";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import {
   LogoMark,
@@ -49,7 +48,6 @@ export function Header() {
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
-  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
 
@@ -86,8 +84,8 @@ export function Header() {
               className="flex items-center gap-2 sm:gap-2.5 shrink-0 group cursor-pointer focus:outline-hidden"
               title="Chipr - Back to Overview"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-white shadow-xs group-hover:scale-105 transition-transform">
-                <LogoMark className="w-5 h-5 text-white" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/15 border border-indigo-500/25 p-1 shadow-xs group-hover:scale-105 transition-transform overflow-hidden">
+                <LogoMark className="w-7 h-7 drop-shadow-xs" />
               </div>
               <span className="text-base font-extrabold tracking-tight text-text-primary hidden sm:inline group-hover:text-brand transition-colors">
                 Chipr
@@ -95,31 +93,14 @@ export function Header() {
             </button>
           </div>
 
-          {/* Desktop Workspace Pill Switcher (Personal vs Business) */}
-          <div className="hidden sm:flex items-center rounded-xl border border-border-subtle bg-canvas p-0.5 sm:p-1 text-xs font-semibold shrink-0">
-            <button
-              type="button"
-              onClick={() => setWorkspace("personal")}
-              className={`rounded-lg px-2.5 sm:px-3 py-1 transition-all cursor-pointer shrink-0 ${
-                workspace === "personal"
-                  ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              <span>Personal</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setWorkspace("business")}
-              className={`rounded-lg px-2.5 sm:px-3 py-1 transition-all cursor-pointer shrink-0 max-w-30 sm:max-w-40 truncate ${
-                workspace === "business"
-                  ? "bg-sky-600 text-white shadow-xs font-bold"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              <span>{settings.businessName || "Business"}</span>
-            </button>
-          </div>
+          {settings.businessName && (
+            <div className="hidden sm:flex items-center gap-2 rounded-xl border border-border-subtle bg-canvas px-2.5 py-1 text-xs font-medium text-text-secondary shrink-0">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="truncate max-w-40 font-semibold text-text-primary">
+                {settings.businessName}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Center: Command Palette Trigger */}
@@ -234,14 +215,6 @@ export function Header() {
                   <WalletIcon className="w-4 h-4 text-emerald-500" />
                   <span>Add Financial Account</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setIsBudgetModalOpen(true)}
-                  className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-text-primary hover:bg-raised font-medium transition-colors cursor-pointer"
-                >
-                  <BudgetIcon className="w-4 h-4 text-amber-500" />
-                  <span>New Budget Envelope</span>
-                </button>
                 <div className="my-1 border-t border-border-subtle" />
                 <button
                   type="button"
@@ -333,36 +306,6 @@ export function Header() {
         </div>
       </header>
 
-      {/* Mobile Dedicated Full-Width Workspace Segmented Control */}
-      <div className="sm:hidden sticky top-16 z-20 w-full border-b border-border-subtle bg-surface/95 px-3 py-2 backdrop-blur-md shadow-xs">
-        <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-border-subtle bg-canvas p-1 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => setWorkspace("personal")}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
-              workspace === "personal"
-                ? "bg-indigo-600 text-white shadow-xs font-bold"
-                : "text-text-muted hover:text-text-primary"
-            }`}
-          >
-            <UserIcon className="w-3.5 h-3.5" />
-            <span>Personal</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setWorkspace("business")}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
-              workspace === "business"
-                ? "bg-sky-600 text-white shadow-xs font-bold"
-                : "text-text-muted hover:text-text-primary"
-            }`}
-          >
-            <BuildingOfficeIcon className="w-3.5 h-3.5" />
-            <span className="truncate max-w-30">{settings.businessName || "Business"}</span>
-          </button>
-        </div>
-      </div>
-
       {/* Global Modals */}
       <NewTransactionModal
         isOpen={isTxModalOpen}
@@ -376,17 +319,12 @@ export function Header() {
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
       />
-      <NewBudgetModal
-        isOpen={isBudgetModalOpen}
-        onClose={() => setIsBudgetModalOpen(false)}
-      />
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         onOpenTxModal={() => setIsTxModalOpen(true)}
         onOpenInvoiceModal={() => setIsInvoiceModalOpen(true)}
         onOpenAccountModal={() => setIsAccountModalOpen(true)}
-        onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
       />
     </>
   );

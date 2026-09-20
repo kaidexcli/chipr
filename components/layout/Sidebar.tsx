@@ -132,11 +132,6 @@ function SidebarBody({
       badgeColor: "red",
     },
     {
-      id: "budgets",
-      label: "Budgets",
-      icon: BudgetIcon,
-    },
-    {
       id: "reports",
       label: "Reports & Tax",
       icon: PnLIcon,
@@ -153,8 +148,8 @@ function SidebarBody({
     },
   ];
 
-  // Filter accounts by active workspace
-  const displayedAccounts = accounts.filter((acc) => acc.entity === workspace);
+  // Show all financial accounts
+  const displayedAccounts = accounts;
 
   const handleNavClick = (tab: NavigationTab) => {
     if (tab === "profile" && activeTab === "profile") {
@@ -162,11 +157,6 @@ function SidebarBody({
     } else {
       setActiveTab(tab);
     }
-    if (onActionClose) onActionClose();
-  };
-
-  const handleWorkspaceChange = (ws: WorkspaceEntity) => {
-    setWorkspace(ws);
     if (onActionClose) onActionClose();
   };
 
@@ -183,58 +173,7 @@ function SidebarBody({
   return (
     <div className="flex flex-col h-full justify-between">
       {/* Scrollable upper section */}
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pr-0.5">
-        {/* Workspace Quick Switcher (Personal vs Business) */}
-        <div className="rounded-2xl border border-border-subtle bg-surface p-1.5 shadow-xs space-y-1.5">
-          <div className="flex items-center justify-between px-2 py-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted opacity-70">
-              Context
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-tighter transition-colors duration-300 ${
-                workspace === "personal"
-                  ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300"
-                  : "bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300"
-              }`}
-            >
-              {workspace === "personal" ? "Personal" : "Business"}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5 p-0.5">
-            <button
-              type="button"
-              onClick={() => handleWorkspaceChange("personal")}
-              className={`py-2 px-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 truncate group ${
-                workspace === "personal"
-                  ? "bg-indigo-600 text-white shadow-md ring-1 ring-indigo-500 font-bold scale-[1.02]"
-                  : "text-text-secondary hover:text-text-primary hover:bg-raised"
-              }`}
-              title="Personal Household Workspace"
-            >
-              <UserIcon className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${
-                workspace === "personal" ? "text-white" : "text-text-muted"
-              }`} />
-              <span className="truncate text-xs">Personal</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleWorkspaceChange("business")}
-              className={`py-2 px-2 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 truncate group ${
-                workspace === "business"
-                  ? "bg-sky-600 text-white shadow-md ring-1 ring-sky-500 font-bold scale-[1.02]"
-                  : "text-text-secondary hover:text-text-primary hover:bg-raised"
-              }`}
-              title="Business Commercial Workspace"
-            >
-              <BuildingOfficeIcon className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${
-                workspace === "business" ? "text-white" : "text-text-muted"
-              }`} />
-              <span className="truncate text-xs">{settings.businessName || "Business"}</span>
-            </button>
-          </div>
-        </div>
-
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-0.5">
         {/* Quick Action Button */}
         <button
           type="button"
@@ -242,7 +181,7 @@ function SidebarBody({
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand py-2.5 px-3 text-xs font-bold text-white shadow-xs hover:bg-brand-hover active:scale-[0.98] transition-all cursor-pointer"
         >
           <PlusIcon className="w-4 h-4" />
-          <span>+ Quick Record</span>
+          <span>+ Record Transaction</span>
         </button>
 
         {/* Navigation Tabs */}
@@ -381,54 +320,31 @@ function SidebarBody({
         </div>
       </div>
 
-      {/* Bottom Section: Solvency Card + Controls + Anti-Commingling */}
-      <div className="pt-3 border-t border-border-subtle space-y-3 shrink-0">
+      {/* Bottom Section: Solvency Runway & User Profile */}
+      <div className="pt-3 border-t border-border-subtle space-y-2.5 shrink-0">
         {/* Real-time Solvency / Runway Mini Widget */}
         <div className="rounded-xl border border-border-subtle bg-canvas/70 p-2.5 space-y-1">
-          {workspace === "business" ? (
-            <>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="font-semibold text-text-muted uppercase tracking-wider">
-                  Cash Runway
-                </span>
-                <span className="font-mono font-bold text-sky-600 dark:text-sky-400">
-                  {metrics.cashRunwayMonths >= 99 || !isFinite(metrics.cashRunwayMonths)
-                    ? "> 24 mo"
-                    : `${metrics.cashRunwayMonths.toFixed(1)} mo`}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-text-muted">
-                <span>Burn Rate</span>
-                <div className="flex items-baseline gap-0.5">
-                  <MoneyAmount
-                    amount={metrics.monthlyBurnRate}
-                    size="xs"
-                    privacyMask={privacyMask}
-                  />
-                  <span className="text-[9px]">/mo</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="font-semibold text-text-muted uppercase tracking-wider">
-                  Savings Rate
-                </span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {Math.max(0, Math.min(100, Math.round(metrics.savingsRate)))}%
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-text-muted">
-                <span>Net Outflow</span>
-                <MoneyAmount
-                  amount={metrics.personalMonthlyOutflow}
-                  size="xs"
-                  privacyMask={privacyMask}
-                />
-              </div>
-            </>
-          )}
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="font-semibold text-text-muted uppercase tracking-wider">
+              Cash Runway
+            </span>
+            <span className="font-mono font-bold text-sky-600 dark:text-sky-400">
+              {metrics.cashRunwayMonths >= 99 || !isFinite(metrics.cashRunwayMonths)
+                ? "> 24 mo"
+                : `${metrics.cashRunwayMonths.toFixed(1)} mo`}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-text-muted">
+            <span>Monthly Burn</span>
+            <div className="flex items-baseline gap-0.5">
+              <MoneyAmount
+                amount={metrics.monthlyBurnRate}
+                size="xs"
+                privacyMask={privacyMask}
+              />
+              <span className="text-[9px]">/mo</span>
+            </div>
+          </div>
         </div>
 
         {/* User Account / Profile Card */}
@@ -448,27 +364,15 @@ function SidebarBody({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold truncate text-text-primary">
-                {settings.personalName || (workspace === "business" ? "Business Account" : "Personal Account")}
+                {settings.businessName || settings.personalName || "Business Workspace"}
               </p>
               <p className="text-[10px] text-text-muted truncate">
-                {settings.email || (workspace === "business" ? "Business Workspace" : "Personal Workspace")}
+                {settings.email || "Operating Workspace"}
               </p>
             </div>
           </div>
           <ChevronRightIcon className="w-3.5 h-3.5 text-text-muted shrink-0" />
         </button>
-
-        {/* Anti-Commingling Certified Badge */}
-        <div className="flex items-center justify-between px-1 text-[10px]">
-          <div className="flex items-center gap-1.5 text-inflow font-semibold">
-            <ShieldCheckIcon className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[10px] tracking-tight">Entity Isolation</span>
-          </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Active
-          </span>
-        </div>
 
         {/* Bottom Utility Controls */}
         <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
@@ -646,8 +550,8 @@ export function Sidebar() {
               className="flex items-center gap-2 group cursor-pointer focus:outline-hidden"
               title="Return to Overview"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand text-white shadow-xs group-hover:scale-105 transition-transform">
-                <LogoMark className="w-4 h-4 text-white" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-400/15 border border-indigo-500/25 p-1 shadow-xs group-hover:scale-105 transition-transform overflow-hidden">
+                <LogoMark className="w-6 h-6 drop-shadow-xs" />
               </div>
               <span className="text-sm font-extrabold tracking-tight text-text-primary group-hover:text-brand transition-colors">
                 Chipr
